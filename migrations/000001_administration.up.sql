@@ -1,7 +1,7 @@
 -- administration
 
 CREATE TABLE IF NOT EXISTS administration (
-    id UUID,
+    id UUID PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     username VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
