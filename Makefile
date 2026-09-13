@@ -32,7 +32,7 @@ test:
 tidy:
 	@go mod tidy
 
-migrate-up: ## Apply migrations (to latest if VERSION not set)
+migrate-up:
 	@if [ -z "$(DB_URL)" ]; then \
 		echo "DB_URL is not set. Please define it in .env or export it"; \
 		exit 1; \
@@ -70,11 +70,14 @@ migrate-force:
 	@$(MIGRATE) -path $(MIGRATIONS_PATH) -database "$(DB_URL)" force $(VERSION)
 
 migrate-create:
-	@if [ -z "$(NAME)" ]; then \
-		echo "NAME is required. Example: make migrate-create NAME=add_payouts"; \
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "Name is required. Example: make migrate-create add_payouts"; \
 		exit 1; \
 	fi
-	@$(MIGRATE) create -ext sql -dir $(MIGRATIONS_PATH) -seq $(NAME)
+	@$(MIGRATE) create -ext sql -dir $(MIGRATIONS_PATH) -seq $(filter-out $@,$(MAKECMDGOALS))
+
+%:
+	@:
 
 docker-up:
 	@$(DOCKER_COMPOSE) up -d --build
