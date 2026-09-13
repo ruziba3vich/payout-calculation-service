@@ -109,6 +109,30 @@ func (q *Queries) GetCourierByID(ctx context.Context, id uuid.UUID) (Courier, er
 	return i, err
 }
 
+const getCourierByPhone = `-- name: GetCourierByPhone :one
+SELECT id, full_name, phone, password, hired_at, is_active, created_at, updated_at, deleted_at
+FROM couriers
+WHERE phone = $1
+  AND deleted_at IS NULL
+`
+
+func (q *Queries) GetCourierByPhone(ctx context.Context, phone string) (Courier, error) {
+	row := q.db.QueryRow(ctx, getCourierByPhone, phone)
+	var i Courier
+	err := row.Scan(
+		&i.ID,
+		&i.FullName,
+		&i.Phone,
+		&i.Password,
+		&i.HiredAt,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const listCouriers = `-- name: ListCouriers :many
 SELECT id, full_name, phone, password, hired_at, is_active, created_at, updated_at, deleted_at
 FROM couriers
