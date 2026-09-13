@@ -10,6 +10,8 @@ APP_NAME          ?= payout-calculation-service
 DOCKER_COMPOSE    ?= docker compose
 MIGRATE           ?= migrate
 MIGRATIONS_PATH   ?= ./migrations
+SQLC              ?= sqlc
+SQLC_CONFIGS      := $(shell find internal -name sqlc.yaml)
 
 GREEN  := \033[0;32m
 YELLOW := \033[0;33m
@@ -31,6 +33,18 @@ test:
 
 tidy:
 	@go mod tidy
+
+sqlc:
+	@for cfg in $(SQLC_CONFIGS); do \
+		echo "$(YELLOW)→ generating $$cfg$(NC)"; \
+		$(SQLC) generate -f $$cfg || exit 1; \
+	done
+
+sqlc-vet:
+	@for cfg in $(SQLC_CONFIGS); do \
+		echo "$(YELLOW)→ compiling $$cfg$(NC)"; \
+		$(SQLC) compile -f $$cfg || exit 1; \
+	done
 
 migrate-up:
 	@if [ -z "$(DB_URL)" ]; then \
