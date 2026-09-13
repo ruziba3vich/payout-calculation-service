@@ -3,7 +3,7 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries: "../queries/administration"
-    schema: "../../../../migrations"
+    schema: "../../../../../migrations"
     gen:
       go:
         package: "administration"
