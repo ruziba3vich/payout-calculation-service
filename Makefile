@@ -11,7 +11,7 @@ DOCKER_COMPOSE    ?= docker compose
 MIGRATE           ?= migrate
 MIGRATIONS_PATH   ?= ./migrations
 SQLC              ?= sqlc
-SQLC_CONFIGS      := $(shell find internal -name sqlc.yaml)
+SQLC_CONFIG       ?= ./internal/infrastructure/persistence/postgres/sqlc.yaml
 
 GREEN  := \033[0;32m
 YELLOW := \033[0;33m
@@ -35,16 +35,12 @@ tidy:
 	@go mod tidy
 
 sqlc:
-	@for cfg in $(SQLC_CONFIGS); do \
-		echo "$(YELLOW)→ generating $$cfg$(NC)"; \
-		$(SQLC) generate -f $$cfg || exit 1; \
-	done
+	@echo "$(YELLOW)→ generating $(SQLC_CONFIG)$(NC)"
+	@$(SQLC) generate -f $(SQLC_CONFIG)
 
 sqlc-vet:
-	@for cfg in $(SQLC_CONFIGS); do \
-		echo "$(YELLOW)→ compiling $$cfg$(NC)"; \
-		$(SQLC) compile -f $$cfg || exit 1; \
-	done
+	@echo "$(YELLOW)→ compiling $(SQLC_CONFIG)$(NC)"
+	@$(SQLC) compile -f $(SQLC_CONFIG)
 
 migrate-up:
 	@if [ -z "$(DB_URL)" ]; then \
