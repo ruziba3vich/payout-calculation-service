@@ -55,3 +55,9 @@ SELECT EXISTS (
     WHERE id = $1
       AND deleted_at IS NULL
 );
+
+-- name: GetCourierByPhone :one
+SELECT *
+FROM couriers
+WHERE phone = $1
+  AND deleted_at IS NULL;
