@@ -13,6 +13,50 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdjustmentType string
+
+const (
+	AdjustmentTypeOrderReturned  AdjustmentType = "order_returned"
+	AdjustmentTypeOrderCancelled AdjustmentType = "order_cancelled"
+	AdjustmentTypeOrderAdded     AdjustmentType = "order_added"
+	AdjustmentTypeManual         AdjustmentType = "manual"
+)
+
+func (e *AdjustmentType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AdjustmentType(s)
+	case string:
+		*e = AdjustmentType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AdjustmentType: %T", src)
+	}
+	return nil
+}
+
+type NullAdjustmentType struct {
+	AdjustmentType AdjustmentType `json:"adjustment_type"`
+	Valid          bool           `json:"valid"` // Valid is true if AdjustmentType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAdjustmentType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AdjustmentType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AdjustmentType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAdjustmentType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AdjustmentType), nil
+}
+
 type OrderStatus string
 
 const (
@@ -57,6 +101,49 @@ func (ns NullOrderStatus) Value() (driver.Value, error) {
 	return string(ns.OrderStatus), nil
 }
 
+type PayoutStatus string
+
+const (
+	PayoutStatusCalculated PayoutStatus = "calculated"
+	PayoutStatusPaid       PayoutStatus = "paid"
+	PayoutStatusCancelled  PayoutStatus = "cancelled"
+)
+
+func (e *PayoutStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PayoutStatus(s)
+	case string:
+		*e = PayoutStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PayoutStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPayoutStatus struct {
+	PayoutStatus PayoutStatus `json:"payout_status"`
+	Valid        bool         `json:"valid"` // Valid is true if PayoutStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPayoutStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PayoutStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PayoutStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPayoutStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PayoutStatus), nil
+}
+
 type Administration struct {
 	ID        uuid.UUID  `json:"id"`
 	FullName  string     `json:"full_name"`
@@ -87,4 +174,32 @@ type Order struct {
 	DeliveredAt *time.Time     `json:"delivered_at"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+type Payout struct {
+	ID               uuid.UUID      `json:"id"`
+	CourierID        uuid.UUID      `json:"courier_id"`
+	Period           time.Time      `json:"period"`
+	DeliveredCount   int32          `json:"delivered_count"`
+	GrossAmount      pgtype.Numeric `json:"gross_amount"`
+	CommissionRate   pgtype.Numeric `json:"commission_rate"`
+	CommissionAmount pgtype.Numeric `json:"commission_amount"`
+	NetAmount        pgtype.Numeric `json:"net_amount"`
+	Status           PayoutStatus   `json:"status"`
+	CalculatedAt     time.Time      `json:"calculated_at"`
+	PaidAt           *time.Time     `json:"paid_at"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+}
+
+type PayoutAdjustment struct {
+	ID              uuid.UUID      `json:"id"`
+	PayoutID        uuid.UUID      `json:"payout_id"`
+	OrderID         uuid.UUID      `json:"order_id"`
+	Type            AdjustmentType `json:"type"`
+	GrossDelta      pgtype.Numeric `json:"gross_delta"`
+	CommissionDelta pgtype.Numeric `json:"commission_delta"`
+	NetDelta        pgtype.Numeric `json:"net_delta"`
+	Reason          *string        `json:"reason"`
+	CreatedAt       time.Time      `json:"created_at"`
 }
