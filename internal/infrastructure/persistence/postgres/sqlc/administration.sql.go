@@ -26,22 +26,29 @@ func (q *Queries) CountAdmins(ctx context.Context) (int64, error) {
 
 const createAdmin = `-- name: CreateAdmin :one
 INSERT INTO administration (
+    id,
     full_name,
     username,
     password
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 ) RETURNING id, full_name, username, password, created_at, updated_at, deleted_at
 `
 
 type CreateAdminParams struct {
-	FullName string `json:"full_name"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	ID       uuid.UUID `json:"id"`
+	FullName string    `json:"full_name"`
+	Username string    `json:"username"`
+	Password string    `json:"password"`
 }
 
 func (q *Queries) CreateAdmin(ctx context.Context, arg CreateAdminParams) (Administration, error) {
-	row := q.db.QueryRow(ctx, createAdmin, arg.FullName, arg.Username, arg.Password)
+	row := q.db.QueryRow(ctx, createAdmin,
+		arg.ID,
+		arg.FullName,
+		arg.Username,
+		arg.Password,
+	)
 	var i Administration
 	err := row.Scan(
 		&i.ID,
