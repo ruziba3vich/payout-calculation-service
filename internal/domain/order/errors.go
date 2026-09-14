@@ -1,5 +1,5 @@
 package order
 
-import "errors"
+import "github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 
-var ErrNotFound = errors.New("order not found")
+var ErrNotFound = errs.NotFoundf("order not found")

@@ -1,6 +1,6 @@
 package auth
 
-import "errors"
+import "github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 
 type Role string
 
@@ -9,4 +9,4 @@ const (
 	RoleCourier Role = "courier"
 )
 
-var ErrInvalidCredentials = errors.New("invalid credentials")
+var ErrInvalidCredentials = errs.Unauthorizedf("invalid credentials")

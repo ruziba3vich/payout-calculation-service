@@ -1,10 +1,10 @@
 package payout
 
-import "errors"
+import "github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 
 var (
-	ErrNotFound      = errors.New("payout not found")
-	ErrAlreadyExists = errors.New("payout for this courier and period already exists")
-	ErrInvalidPeriod = errors.New("period must be in YYYY-MM format")
-	ErrFuturePeriod  = errors.New("period must not be in the future")
+	ErrNotFound      = errs.NotFoundf("payout not found")
+	ErrAlreadyExists = errs.Conflictf("payout for this courier and period already exists")
+	ErrInvalidPeriod = errs.Invalidf("period must be in YYYY-MM format")
+	ErrFuturePeriod  = errs.Invalidf("period must not be in the future")
 )

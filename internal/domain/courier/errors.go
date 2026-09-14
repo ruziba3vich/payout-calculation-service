@@ -1,8 +1,8 @@
 package courier
 
-import "errors"
+import "github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 
 var (
-	ErrNotFound   = errors.New("courier not found")
-	ErrPhoneTaken = errors.New("courier phone already taken")
+	ErrNotFound   = errs.NotFoundf("courier not found")
+	ErrPhoneTaken = errs.Conflictf("courier phone already taken")
 )
