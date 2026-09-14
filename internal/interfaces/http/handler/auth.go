@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -48,7 +47,7 @@ func (h *AuthHandler) AdminLogin(c *gin.Context) {
 
 	t, err := h.svc.LoginAdmin(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
-		h.loginError(c, err)
+		writeError(c, err)
 		return
 	}
 
@@ -64,19 +63,11 @@ func (h *AuthHandler) CourierLogin(c *gin.Context) {
 
 	t, err := h.svc.LoginCourier(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
-		h.loginError(c, err)
+		writeError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, toTokenResponse(t))
-}
-
-func (h *AuthHandler) loginError(c *gin.Context, err error) {
-	if errors.Is(err, auth.ErrInvalidCredentials) {
-		httpx.Error(c, http.StatusUnauthorized, err.Error())
-		return
-	}
-	httpx.Error(c, http.StatusInternalServerError, err.Error())
 }
 
 func toTokenResponse(t authapp.Token) tokenResponse {

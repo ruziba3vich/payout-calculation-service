@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/auth"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	httpx "github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http"
 )
 
@@ -38,7 +39,7 @@ func Auth(parser TokenParser) gin.HandlerFunc {
 
 		id, role, err := parser.Parse(parts[1])
 		if err != nil {
-			httpx.Error(c, http.StatusUnauthorized, "invalid or expired token")
+			httpx.Error(c, http.StatusUnauthorized, errs.Public(err))
 			return
 		}
 
