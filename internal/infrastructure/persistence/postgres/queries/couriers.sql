@@ -61,3 +61,10 @@ SELECT *
 FROM couriers
 WHERE phone = $1
   AND deleted_at IS NULL;
+
+-- name: ListActiveCourierIDs :many
+SELECT id
+FROM couriers
+WHERE is_active = TRUE
+  AND deleted_at IS NULL
+ORDER BY id;

@@ -130,6 +130,40 @@ func (q *Queries) GetPayoutByCourierPeriod(ctx context.Context, arg GetPayoutByC
 	return i, err
 }
 
+const getPayoutByCourierPeriodForUpdate = `-- name: GetPayoutByCourierPeriodForUpdate :one
+SELECT id, courier_id, period, delivered_count, gross_amount, commission_rate, commission_amount, net_amount, status, calculated_at, paid_at, created_at, updated_at
+FROM payouts
+WHERE courier_id = $1
+  AND period = $2
+FOR UPDATE
+`
+
+type GetPayoutByCourierPeriodForUpdateParams struct {
+	CourierID uuid.UUID `json:"courier_id"`
+	Period    time.Time `json:"period"`
+}
+
+func (q *Queries) GetPayoutByCourierPeriodForUpdate(ctx context.Context, arg GetPayoutByCourierPeriodForUpdateParams) (Payout, error) {
+	row := q.db.QueryRow(ctx, getPayoutByCourierPeriodForUpdate, arg.CourierID, arg.Period)
+	var i Payout
+	err := row.Scan(
+		&i.ID,
+		&i.CourierID,
+		&i.Period,
+		&i.DeliveredCount,
+		&i.GrossAmount,
+		&i.CommissionRate,
+		&i.CommissionAmount,
+		&i.NetAmount,
+		&i.Status,
+		&i.CalculatedAt,
+		&i.PaidAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getPayoutByID = `-- name: GetPayoutByID :one
 SELECT id, courier_id, period, delivered_count, gross_amount, commission_rate, commission_amount, net_amount, status, calculated_at, paid_at, created_at, updated_at
 FROM payouts

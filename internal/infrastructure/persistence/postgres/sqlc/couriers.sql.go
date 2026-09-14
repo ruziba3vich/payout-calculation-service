@@ -132,6 +132,34 @@ func (q *Queries) GetCourierByPhone(ctx context.Context, phone string) (Courier,
 	return i, err
 }
 
+const listActiveCourierIDs = `-- name: ListActiveCourierIDs :many
+SELECT id
+FROM couriers
+WHERE is_active = TRUE
+  AND deleted_at IS NULL
+ORDER BY id
+`
+
+func (q *Queries) ListActiveCourierIDs(ctx context.Context) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listActiveCourierIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCouriers = `-- name: ListCouriers :many
 SELECT id, full_name, phone, password, hired_at, is_active, created_at, updated_at, deleted_at
 FROM couriers

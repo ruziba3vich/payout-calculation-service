@@ -222,3 +222,25 @@ func (q *Queries) ListPayoutAdjustmentsByPayoutID(ctx context.Context, payoutID 
 	}
 	return items, nil
 }
+
+const sumPayoutAdjustments = `-- name: SumPayoutAdjustments :one
+SELECT
+    COALESCE(SUM(gross_delta), 0)::numeric      AS gross_delta,
+    COALESCE(SUM(commission_delta), 0)::numeric AS commission_delta,
+    COALESCE(SUM(net_delta), 0)::numeric        AS net_delta
+FROM payout_adjustments
+WHERE payout_id = $1
+`
+
+type SumPayoutAdjustmentsRow struct {
+	GrossDelta      pgtype.Numeric `json:"gross_delta"`
+	CommissionDelta pgtype.Numeric `json:"commission_delta"`
+	NetDelta        pgtype.Numeric `json:"net_delta"`
+}
+
+func (q *Queries) SumPayoutAdjustments(ctx context.Context, payoutID uuid.UUID) (SumPayoutAdjustmentsRow, error) {
+	row := q.db.QueryRow(ctx, sumPayoutAdjustments, payoutID)
+	var i SumPayoutAdjustmentsRow
+	err := row.Scan(&i.GrossDelta, &i.CommissionDelta, &i.NetDelta)
+	return i, err
+}

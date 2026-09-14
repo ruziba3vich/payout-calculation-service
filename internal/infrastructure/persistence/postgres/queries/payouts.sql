@@ -59,3 +59,10 @@ WHERE (sqlc.narg('courier_id')::uuid IS NULL OR courier_id = sqlc.narg('courier_
   AND (sqlc.narg('status')::payout_status IS NULL OR status = sqlc.narg('status')::payout_status)
   AND (sqlc.narg('period_from')::date IS NULL OR period >= sqlc.narg('period_from')::date)
   AND (sqlc.narg('period_to')::date   IS NULL OR period <= sqlc.narg('period_to')::date);
+
+-- name: GetPayoutByCourierPeriodForUpdate :one
+SELECT *
+FROM payouts
+WHERE courier_id = $1
+  AND period = $2
+FOR UPDATE;

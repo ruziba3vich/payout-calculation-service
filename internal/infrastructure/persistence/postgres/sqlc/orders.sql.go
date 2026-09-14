@@ -94,6 +94,35 @@ func (q *Queries) DeleteOrder(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const getDeliveredStatsForPeriod = `-- name: GetDeliveredStatsForPeriod :one
+SELECT
+    COUNT(*)::bigint                  AS delivered_count,
+    COALESCE(SUM(amount), 0)::numeric AS delivered_total
+FROM orders
+WHERE courier_id = $1
+  AND status = 'delivered'
+  AND delivered_at >= $2::timestamptz
+  AND delivered_at <  $3::timestamptz
+`
+
+type GetDeliveredStatsForPeriodParams struct {
+	CourierID   uuid.UUID `json:"courier_id"`
+	PeriodStart time.Time `json:"period_start"`
+	PeriodEnd   time.Time `json:"period_end"`
+}
+
+type GetDeliveredStatsForPeriodRow struct {
+	DeliveredCount int64          `json:"delivered_count"`
+	DeliveredTotal pgtype.Numeric `json:"delivered_total"`
+}
+
+func (q *Queries) GetDeliveredStatsForPeriod(ctx context.Context, arg GetDeliveredStatsForPeriodParams) (GetDeliveredStatsForPeriodRow, error) {
+	row := q.db.QueryRow(ctx, getDeliveredStatsForPeriod, arg.CourierID, arg.PeriodStart, arg.PeriodEnd)
+	var i GetDeliveredStatsForPeriodRow
+	err := row.Scan(&i.DeliveredCount, &i.DeliveredTotal)
+	return i, err
+}
+
 const getOrderByID = `-- name: GetOrderByID :one
 SELECT id, courier_id, amount, status, delivered_at, created_at, updated_at
 FROM orders
@@ -102,6 +131,28 @@ WHERE id = $1
 
 func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error) {
 	row := q.db.QueryRow(ctx, getOrderByID, id)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.CourierID,
+		&i.Amount,
+		&i.Status,
+		&i.DeliveredAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOrderByIDForUpdate = `-- name: GetOrderByIDForUpdate :one
+SELECT id, courier_id, amount, status, delivered_at, created_at, updated_at
+FROM orders
+WHERE id = $1
+FOR UPDATE
+`
+
+func (q *Queries) GetOrderByIDForUpdate(ctx context.Context, id uuid.UUID) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrderByIDForUpdate, id)
 	var i Order
 	err := row.Scan(
 		&i.ID,

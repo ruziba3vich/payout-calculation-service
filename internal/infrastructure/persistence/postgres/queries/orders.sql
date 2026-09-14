@@ -60,3 +60,19 @@ WHERE (sqlc.narg('courier_id')::uuid IS NULL OR courier_id = sqlc.narg('courier_
     AND (sqlc.narg('created_to')::timestamptz     IS NULL OR created_at   <  sqlc.narg('created_to')::timestamptz)
     AND (sqlc.narg('amount_min')::numeric IS NULL OR amount >= sqlc.narg('amount_min')::numeric)
     AND (sqlc.narg('amount_max')::numeric IS NULL OR amount <= sqlc.narg('amount_max')::numeric);
+
+-- name: GetOrderByIDForUpdate :one
+SELECT *
+FROM orders
+WHERE id = $1
+FOR UPDATE;
+
+-- name: GetDeliveredStatsForPeriod :one
+SELECT
+    COUNT(*)::bigint                  AS delivered_count,
+    COALESCE(SUM(amount), 0)::numeric AS delivered_total
+FROM orders
+WHERE courier_id = $1
+  AND status = 'delivered'
+  AND delivered_at >= sqlc.arg('period_start')::timestamptz
+  AND delivered_at <  sqlc.arg('period_end')::timestamptz;

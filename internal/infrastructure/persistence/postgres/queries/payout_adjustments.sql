@@ -45,3 +45,11 @@ WHERE (sqlc.narg('payout_id')::uuid IS NULL OR payout_id = sqlc.narg('payout_id'
   AND (sqlc.narg('type')::adjustment_type IS NULL OR type = sqlc.narg('type')::adjustment_type)
   AND (sqlc.narg('created_from')::timestamptz IS NULL OR created_at >= sqlc.narg('created_from')::timestamptz)
   AND (sqlc.narg('created_to')::timestamptz   IS NULL OR created_at <  sqlc.narg('created_to')::timestamptz);
+
+-- name: SumPayoutAdjustments :one
+SELECT
+    COALESCE(SUM(gross_delta), 0)::numeric      AS gross_delta,
+    COALESCE(SUM(commission_delta), 0)::numeric AS commission_delta,
+    COALESCE(SUM(net_delta), 0)::numeric        AS net_delta
+FROM payout_adjustments
+WHERE payout_id = $1;
