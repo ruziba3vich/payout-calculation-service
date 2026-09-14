@@ -16,10 +16,7 @@ CREATE TABLE IF NOT EXISTS payout_adjustments (
     "commission_delta" NUMERIC(14, 2) NOT NULL DEFAULT 0,
     "net_delta" NUMERIC(14, 2) NOT NULL DEFAULT 0,
     "reason" TEXT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT "uq_payout_adjustments_payout_order_type"
-        UNIQUE ("payout_id", "order_id", "type")
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS "idx_payout_adjustments_payout_id"
