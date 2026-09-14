@@ -6,9 +6,20 @@ import (
 
 type Handlers struct {
 	Health  gin.HandlerFunc
+	Auth    AuthRoutes
 	Courier CourierRoutes
 	Order   OrderRoutes
 	Payout  PayoutRoutes
+}
+
+type Middleware struct {
+	Auth          gin.HandlerFunc
+	AdminOnly     gin.HandlerFunc
+	SelfOrAdminID gin.HandlerFunc
+}
+
+type AuthRoutes struct {
+	AdminLogin, CourierLogin gin.HandlerFunc
 }
 
 type CourierRoutes struct {
@@ -20,37 +31,46 @@ type OrderRoutes struct {
 }
 
 type PayoutRoutes struct {
-	Get, List, ListByCourier gin.HandlerFunc
+	Calculate, Get, List, ListByCourier gin.HandlerFunc
 }
 
-func NewRouter(h Handlers) *gin.Engine {
+func NewRouter(h Handlers, m Middleware) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
 	r.GET("/health", h.Health)
 
-	couriers := r.Group("/couriers")
+	auth := r.Group("/auth")
 	{
-		couriers.POST("", h.Courier.Create)
-		couriers.GET("", h.Courier.List)
-		couriers.GET("/:id", h.Courier.Get)
-		couriers.PATCH("/:id", h.Courier.Update)
-		couriers.DELETE("/:id", h.Courier.Delete)
-		couriers.GET("/:id/payouts", h.Payout.ListByCourier)
+		auth.POST("/admin/login", h.Auth.AdminLogin)
+		auth.POST("/courier/login", h.Auth.CourierLogin)
 	}
 
-	orders := r.Group("/orders")
+	api := r.Group("", m.Auth)
+
+	couriers := api.Group("/couriers")
 	{
-		orders.POST("", h.Order.Create)
+		couriers.POST("", m.AdminOnly, h.Courier.Create)
+		couriers.GET("", m.AdminOnly, h.Courier.List)
+		couriers.GET("/:id", m.SelfOrAdminID, h.Courier.Get)
+		couriers.PATCH("/:id", m.AdminOnly, h.Courier.Update)
+		couriers.DELETE("/:id", m.AdminOnly, h.Courier.Delete)
+		couriers.GET("/:id/payouts", m.SelfOrAdminID, h.Payout.ListByCourier)
+	}
+
+	orders := api.Group("/orders")
+	{
+		orders.POST("", m.AdminOnly, h.Order.Create)
 		orders.GET("", h.Order.List)
 		orders.GET("/:id", h.Order.Get)
 		orders.PATCH("/:id/status", h.Order.UpdateStatus)
-		orders.DELETE("/:id", h.Order.Delete)
+		orders.DELETE("/:id", m.AdminOnly, h.Order.Delete)
 	}
 
-	payouts := r.Group("/payouts")
+	payouts := api.Group("/payouts")
 	{
-		payouts.GET("", h.Payout.List)
+		payouts.POST("/calculate", m.AdminOnly, h.Payout.Calculate)
+		payouts.GET("", m.AdminOnly, h.Payout.List)
 		payouts.GET("/:id", h.Payout.Get)
 	}
 

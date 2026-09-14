@@ -9,8 +9,10 @@ import (
 	"github.com/shopspring/decimal"
 
 	orderapp "github.com/ruziba3vich/payout-calculation-service/internal/application/order"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/auth"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/order"
 	httpx "github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http"
+	"github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http/middleware"
 )
 
 type OrderHandler struct {
@@ -55,7 +57,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		Amount:    req.Amount,
 	})
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -71,7 +73,12 @@ func (h *OrderHandler) Get(c *gin.Context) {
 
 	o, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
+		return
+	}
+
+	if !canAccessCourier(c, o.CourierID) {
+		httpx.Error(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -91,9 +98,21 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 		return
 	}
 
+	if p, _ := middleware.GetPrincipal(c); p.Role == auth.RoleCourier {
+		existing, err := h.svc.GetByID(c.Request.Context(), id)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		if existing.CourierID != p.ID {
+			httpx.Error(c, http.StatusForbidden, "forbidden")
+			return
+		}
+	}
+
 	o, err := h.svc.UpdateStatus(c.Request.Context(), id, req.Status)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -108,7 +127,7 @@ func (h *OrderHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -137,6 +156,9 @@ func (h *OrderHandler) List(c *gin.Context) {
 			return
 		}
 		params.CourierID = &id
+	}
+	if p, _ := middleware.GetPrincipal(c); p.Role == auth.RoleCourier {
+		params.CourierID = &p.ID
 	}
 	if q.Status != "" {
 		s := order.Status(q.Status)
@@ -171,7 +193,7 @@ func (h *OrderHandler) List(c *gin.Context) {
 
 	items, total, err := h.svc.List(c.Request.Context(), params)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -198,4 +220,12 @@ func parseDecimalPtr(s string) (*decimal.Decimal, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+
+func canAccessCourier(c *gin.Context, courierID uuid.UUID) bool {
+	p, ok := middleware.GetPrincipal(c)
+	if !ok {
+		return false
+	}
+	return p.Role == auth.RoleAdmin || p.ID == courierID
 }

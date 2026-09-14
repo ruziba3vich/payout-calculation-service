@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -18,6 +19,42 @@ type PayoutHandler struct {
 
 func NewPayoutHandler(svc *payoutapp.Service) *PayoutHandler {
 	return &PayoutHandler{svc: svc}
+}
+
+type calculatePayoutRequest struct {
+	CourierID uuid.UUID `json:"courier_id" binding:"required"`
+	Period    string    `json:"period" binding:"required"`
+}
+
+// Calculate creates the payout for courier + month. A second call for the same
+// pair returns 409 with the existing payout in the body.
+func (h *PayoutHandler) Calculate(c *gin.Context) {
+	var req calculatePayoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	period, err := payout.ParsePeriod(req.Period)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	p, err := h.svc.Calculate(c.Request.Context(), req.CourierID, period)
+	if errors.Is(err, payout.ErrAlreadyExists) {
+		c.AbortWithStatusJSON(http.StatusConflict, gin.H{
+			"error":  err.Error(),
+			"payout": toPayoutResponse(p),
+		})
+		return
+	}
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toPayoutResponse(p))
 }
 
 type listPayoutsQuery struct {
@@ -38,13 +75,19 @@ func (h *PayoutHandler) Get(c *gin.Context) {
 
 	res, err := h.svc.GetWithAdjustments(c.Request.Context(), id)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
+		return
+	}
+
+	if !canAccessCourier(c, res.Payout.CourierID) {
+		httpx.Error(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
 	c.JSON(http.StatusOK, PayoutWithAdjustmentsResponse{
 		PayoutResponse: toPayoutResponse(res.Payout),
 		Adjustments:    toAdjustmentResponses(res.Adjustments),
+		TotalAmount:    payoutapp.Total(res.Payout, res.Adjustments),
 	})
 }
 
@@ -56,7 +99,7 @@ func (h *PayoutHandler) List(c *gin.Context) {
 
 	items, total, err := h.svc.List(c.Request.Context(), params)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -78,7 +121,7 @@ func (h *PayoutHandler) ListByCourier(c *gin.Context) {
 
 	items, total, err := h.svc.List(c.Request.Context(), params)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
