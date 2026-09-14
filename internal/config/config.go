@@ -16,6 +16,13 @@ type Config struct {
 	Redis    RedisConfig
 	JWT      JWTConfig
 	Admin    AdminConfig
+	Job      JobConfig
+}
+
+// JobConfig controls the monthly payout job.
+type JobConfig struct {
+	Enabled bool
+	Cron    string // 5 field spec, default 00:00 on the 1st
 }
 
 // AdminConfig seeds a first admin on startup when both fields are set.
@@ -105,6 +112,10 @@ func Load() (Config, error) {
 			Username: getString("ADMIN_USERNAME", ""),
 			Password: getString("ADMIN_PASSWORD", ""),
 		},
+		Job: JobConfig{
+			Enabled: getBool("PAYOUT_JOB_ENABLED", true, &errs),
+			Cron:    getString("PAYOUT_JOB_CRON", "0 0 1 * *"),
+		},
 	}
 
 	if len(cfg.JWT.Secret) > 0 && len(cfg.JWT.Secret) < 32 {
@@ -147,6 +158,19 @@ func getInt(key string, def int, errs *[]error) int {
 		return def
 	}
 	return n
+}
+
+func getBool(key string, def bool, errs *[]error) bool {
+	v, ok := os.LookupEnv(key)
+	if !ok || strings.TrimSpace(v) == "" {
+		return def
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		*errs = append(*errs, fmt.Errorf("%s: invalid bool %q", key, v))
+		return def
+	}
+	return b
 }
 
 func getDuration(key string, def time.Duration, errs *[]error) time.Duration {

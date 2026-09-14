@@ -15,10 +15,47 @@ import (
 
 type PayoutHandler struct {
 	svc *payoutapp.Service
+	job *payoutapp.MonthlyJob
 }
 
-func NewPayoutHandler(svc *payoutapp.Service) *PayoutHandler {
-	return &PayoutHandler{svc: svc}
+func NewPayoutHandler(svc *payoutapp.Service, job *payoutapp.MonthlyJob) *PayoutHandler {
+	return &PayoutHandler{svc: svc, job: job}
+}
+
+type runJobRequest struct {
+	Period string `json:"period"` // optional YYYY-MM, default previous month
+}
+
+// RunJob triggers the monthly job by hand. Same lock as the cron run.
+func (h *PayoutHandler) RunJob(c *gin.Context) {
+	var req runJobRequest
+	if c.Request.ContentLength > 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			httpx.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	var (
+		res payoutapp.JobResult
+		err error
+	)
+	if req.Period == "" {
+		res, err = h.job.RunPrevious(c.Request.Context())
+	} else {
+		period, perr := payout.ParsePeriod(req.Period)
+		if perr != nil {
+			writeError(c, perr)
+			return
+		}
+		res, err = h.job.Run(c.Request.Context(), period)
+	}
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 type calculatePayoutRequest struct {

@@ -20,7 +20,9 @@ import (
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/auth"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/payout"
 	jwtauth "github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/auth"
+	rediscache "github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/cache"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres"
+	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/scheduler"
 	httpx "github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http"
 	"github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http/handler"
 	"github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http/middleware"
@@ -45,12 +47,19 @@ func main() {
 	}
 	defer db.Close()
 
+	redis, err := rediscache.NewRedis(ctx, cfg.Redis)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer redis.Close()
+
 	adminRepo := postgres.NewAdminRepo(db)
 	courierRepo := postgres.NewCourierRepo(db)
 	orderRepo := postgres.NewOrderRepo(db)
 	payoutRepo := postgres.NewPayoutRepo(db)
 	adjustmentRepo := postgres.NewPayoutAdjustmentRepo(db)
 	transactor := postgres.NewTransactor(db)
+	locker := postgres.NewLocker(db)
 
 	tokens := jwtauth.NewManager(cfg.JWT)
 
@@ -58,7 +67,9 @@ func main() {
 	authSvc := authapp.NewService(adminRepo, courierRepo, tokens)
 	courierSvc := courierapp.NewService(courierRepo)
 	calculator := payout.NewCalculator(payout.DefaultTiers)
-	payoutSvc := payoutapp.NewService(payoutRepo, adjustmentRepo, courierRepo, transactor, calculator)
+	payoutCache := payoutapp.NewCache(redis, cfg.Redis.PayoutTTL, cfg.Redis.PayoutListTTL)
+	payoutSvc := payoutapp.NewService(payoutRepo, adjustmentRepo, courierRepo, transactor, calculator, payoutCache)
+	monthlyJob := payoutapp.NewMonthlyJob(payoutSvc, courierRepo, locker)
 	orderSvc := orderapp.NewService(orderRepo, courierRepo, transactor, payoutSvc)
 
 	if cfg.Admin.Username != "" && cfg.Admin.Password != "" {
@@ -70,7 +81,7 @@ func main() {
 	authH := handler.NewAuthHandler(authSvc)
 	courierH := handler.NewCourierHandler(courierSvc)
 	orderH := handler.NewOrderHandler(orderSvc)
-	payoutH := handler.NewPayoutHandler(payoutSvc)
+	payoutH := handler.NewPayoutHandler(payoutSvc, monthlyJob)
 
 	router := httpx.NewRouter(httpx.Handlers{
 		Health: handler.Health,
@@ -94,6 +105,7 @@ func main() {
 		},
 		Payout: httpx.PayoutRoutes{
 			Calculate:     payoutH.Calculate,
+			RunJob:        payoutH.RunJob,
 			Get:           payoutH.Get,
 			List:          payoutH.List,
 			ListByCourier: payoutH.ListByCourier,
@@ -103,6 +115,19 @@ func main() {
 		AdminOnly:     middleware.RequireRole(auth.RoleAdmin),
 		SelfOrAdminID: middleware.RequireSelfOrAdmin("id"),
 	})
+
+	sched := scheduler.New()
+	if cfg.Job.Enabled {
+		err := sched.Add(cfg.Job.Cron, "monthly payout", func(ctx context.Context) error {
+			_, err := monthlyJob.RunPrevious(ctx)
+			return err
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		sched.Start()
+		log.Printf("monthly payout job scheduled: %q", cfg.Job.Cron)
+	}
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTP.Port,
@@ -124,6 +149,8 @@ func main() {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
 	defer cancel()
+
+	sched.Stop(shutdownCtx)
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Println("shutdown error:", err)

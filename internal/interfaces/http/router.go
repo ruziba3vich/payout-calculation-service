@@ -31,7 +31,7 @@ type OrderRoutes struct {
 }
 
 type PayoutRoutes struct {
-	Calculate, Get, List, ListByCourier gin.HandlerFunc
+	Calculate, RunJob, Get, List, ListByCourier gin.HandlerFunc
 }
 
 func NewRouter(h Handlers, m Middleware) *gin.Engine {
@@ -70,6 +70,7 @@ func NewRouter(h Handlers, m Middleware) *gin.Engine {
 	payouts := api.Group("/payouts")
 	{
 		payouts.POST("/calculate", m.AdminOnly, h.Payout.Calculate)
+		payouts.POST("/jobs/monthly", m.AdminOnly, h.Payout.RunJob)
 		payouts.GET("", m.AdminOnly, h.Payout.List)
 		payouts.GET("/:id", h.Payout.Get)
 	}

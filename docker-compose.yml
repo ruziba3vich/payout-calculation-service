@@ -51,6 +51,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-#hello-world-test-jwt-secret-1899}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      PAYOUT_JOB_ENABLED: "true"
+      PAYOUT_JOB_CRON: "0 0 1 * *"
     depends_on:
       postgres:
         condition: service_healthy
