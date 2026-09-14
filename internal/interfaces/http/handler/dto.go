@@ -150,4 +150,6 @@ func toAdjustmentResponses(as []payout.Adjustment) []AdjustmentResponse {
 type PayoutWithAdjustmentsResponse struct {
 	PayoutResponse
 	Adjustments []AdjustmentResponse `json:"adjustments"`
+	// TotalAmount is net_amount plus all adjustment net deltas.
+	TotalAmount decimal.Decimal `json:"total_amount"`
 }

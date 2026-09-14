@@ -54,7 +54,7 @@ func (h *CourierHandler) Create(c *gin.Context) {
 		HiredAt:  hiredAt,
 	})
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *CourierHandler) Get(c *gin.Context) {
 
 	courier, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (h *CourierHandler) List(c *gin.Context) {
 		Offset: offset,
 	})
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (h *CourierHandler) Update(c *gin.Context) {
 		IsActive: req.IsActive,
 	})
 	if err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (h *CourierHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
-		httpx.Error(c, http.StatusInternalServerError, err.Error())
+		writeError(c, err)
 		return
 	}
 
