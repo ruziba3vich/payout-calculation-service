@@ -18,6 +18,10 @@ func NewPayoutRepo(db *DB) *PayoutRepo {
 	return &PayoutRepo{q: sqlc.New(db.Pool)}
 }
 
+func newPayoutRepo(q *sqlc.Queries) *PayoutRepo {
+	return &PayoutRepo{q: q}
+}
+
 func (r *PayoutRepo) Create(ctx context.Context, p payout.Payout) (payout.Payout, error) {
 	row, err := r.q.CreatePayout(ctx, sqlc.CreatePayoutParams{
 		ID:               p.ID,
@@ -30,6 +34,9 @@ func (r *PayoutRepo) Create(ctx context.Context, p payout.Payout) (payout.Payout
 		NetAmount:        fromDecimal(p.NetAmount),
 	})
 	if err != nil {
+		if isUniqueViolation(err) {
+			return payout.Payout{}, payout.ErrAlreadyExists
+		}
 		return payout.Payout{}, err
 	}
 	return toPayout(row), nil
@@ -38,6 +45,9 @@ func (r *PayoutRepo) Create(ctx context.Context, p payout.Payout) (payout.Payout
 func (r *PayoutRepo) GetByID(ctx context.Context, id uuid.UUID) (payout.Payout, error) {
 	row, err := r.q.GetPayoutByID(ctx, id)
 	if err != nil {
+		if isNotFound(err) {
+			return payout.Payout{}, payout.ErrNotFound
+		}
 		return payout.Payout{}, err
 	}
 	return toPayout(row), nil
@@ -49,6 +59,23 @@ func (r *PayoutRepo) GetByCourierPeriod(ctx context.Context, courierID uuid.UUID
 		Period:    period,
 	})
 	if err != nil {
+		if isNotFound(err) {
+			return payout.Payout{}, payout.ErrNotFound
+		}
+		return payout.Payout{}, err
+	}
+	return toPayout(row), nil
+}
+
+func (r *PayoutRepo) GetByCourierPeriodForUpdate(ctx context.Context, courierID uuid.UUID, period time.Time) (payout.Payout, error) {
+	row, err := r.q.GetPayoutByCourierPeriodForUpdate(ctx, sqlc.GetPayoutByCourierPeriodForUpdateParams{
+		CourierID: courierID,
+		Period:    period,
+	})
+	if err != nil {
+		if isNotFound(err) {
+			return payout.Payout{}, payout.ErrNotFound
+		}
 		return payout.Payout{}, err
 	}
 	return toPayout(row), nil
@@ -60,6 +87,9 @@ func (r *PayoutRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status payo
 		Status: sqlc.PayoutStatus(status),
 	})
 	if err != nil {
+		if isNotFound(err) {
+			return payout.Payout{}, payout.ErrNotFound
+		}
 		return payout.Payout{}, err
 	}
 	return toPayout(row), nil

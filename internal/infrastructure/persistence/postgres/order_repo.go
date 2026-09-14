@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/order"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
@@ -15,6 +17,10 @@ type OrderRepo struct {
 
 func NewOrderRepo(db *DB) *OrderRepo {
 	return &OrderRepo{q: sqlc.New(db.Pool)}
+}
+
+func newOrderRepo(q *sqlc.Queries) *OrderRepo {
+	return &OrderRepo{q: q}
 }
 
 func (r *OrderRepo) Create(ctx context.Context, o order.Order) (order.Order, error) {
@@ -32,6 +38,20 @@ func (r *OrderRepo) Create(ctx context.Context, o order.Order) (order.Order, err
 func (r *OrderRepo) GetByID(ctx context.Context, id uuid.UUID) (order.Order, error) {
 	row, err := r.q.GetOrderByID(ctx, id)
 	if err != nil {
+		if isNotFound(err) {
+			return order.Order{}, order.ErrNotFound
+		}
+		return order.Order{}, err
+	}
+	return toOrder(row), nil
+}
+
+func (r *OrderRepo) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (order.Order, error) {
+	row, err := r.q.GetOrderByIDForUpdate(ctx, id)
+	if err != nil {
+		if isNotFound(err) {
+			return order.Order{}, order.ErrNotFound
+		}
 		return order.Order{}, err
 	}
 	return toOrder(row), nil
@@ -43,6 +63,9 @@ func (r *OrderRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status order
 		Status: sqlc.OrderStatus(status),
 	})
 	if err != nil {
+		if isNotFound(err) {
+			return order.Order{}, order.ErrNotFound
+		}
 		return order.Order{}, err
 	}
 	return toOrder(row), nil
@@ -96,6 +119,18 @@ func (r *OrderRepo) List(ctx context.Context, p order.ListParams) ([]order.Order
 		result = append(result, toOrder(row))
 	}
 	return result, total, nil
+}
+
+func (r *OrderRepo) DeliveredStats(ctx context.Context, courierID uuid.UUID, start, end time.Time) (int64, decimal.Decimal, error) {
+	row, err := r.q.GetDeliveredStatsForPeriod(ctx, sqlc.GetDeliveredStatsForPeriodParams{
+		CourierID:   courierID,
+		PeriodStart: start,
+		PeriodEnd:   end,
+	})
+	if err != nil {
+		return 0, decimal.Zero, err
+	}
+	return row.DeliveredCount, toDecimal(row.DeliveredTotal), nil
 }
 
 func toOrder(row sqlc.Order) order.Order {

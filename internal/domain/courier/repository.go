@@ -14,4 +14,5 @@ type Repository interface {
 	SoftDelete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, p ListParams) ([]Courier, int64, error)
 	Exists(ctx context.Context, id uuid.UUID) (bool, error)
+	ListActiveIDs(ctx context.Context) ([]uuid.UUID, error)
 }

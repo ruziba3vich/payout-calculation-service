@@ -39,3 +39,9 @@ type AdjustmentListParams struct {
 	Limit       int32
 	Offset      int32
 }
+
+type AdjustmentSum struct {
+	GrossDelta      decimal.Decimal
+	CommissionDelta decimal.Decimal
+	NetDelta        decimal.Decimal
+}

@@ -17,6 +17,10 @@ func NewPayoutAdjustmentRepo(db *DB) *PayoutAdjustmentRepo {
 	return &PayoutAdjustmentRepo{q: sqlc.New(db.Pool)}
 }
 
+func newPayoutAdjustmentRepo(q *sqlc.Queries) *PayoutAdjustmentRepo {
+	return &PayoutAdjustmentRepo{q: q}
+}
+
 func (r *PayoutAdjustmentRepo) Create(ctx context.Context, a payout.Adjustment) (payout.Adjustment, error) {
 	row, err := r.q.CreatePayoutAdjustment(ctx, sqlc.CreatePayoutAdjustmentParams{
 		ID:              a.ID,
@@ -37,6 +41,9 @@ func (r *PayoutAdjustmentRepo) Create(ctx context.Context, a payout.Adjustment) 
 func (r *PayoutAdjustmentRepo) GetByID(ctx context.Context, id uuid.UUID) (payout.Adjustment, error) {
 	row, err := r.q.GetPayoutAdjustmentByID(ctx, id)
 	if err != nil {
+		if isNotFound(err) {
+			return payout.Adjustment{}, payout.ErrNotFound
+		}
 		return payout.Adjustment{}, err
 	}
 	return toAdjustment(row), nil
@@ -93,6 +100,18 @@ func (r *PayoutAdjustmentRepo) List(ctx context.Context, p payout.AdjustmentList
 		result = append(result, toAdjustment(row))
 	}
 	return result, total, nil
+}
+
+func (r *PayoutAdjustmentRepo) SumByPayoutID(ctx context.Context, payoutID uuid.UUID) (payout.AdjustmentSum, error) {
+	row, err := r.q.SumPayoutAdjustments(ctx, payoutID)
+	if err != nil {
+		return payout.AdjustmentSum{}, err
+	}
+	return payout.AdjustmentSum{
+		GrossDelta:      toDecimal(row.GrossDelta),
+		CommissionDelta: toDecimal(row.CommissionDelta),
+		NetDelta:        toDecimal(row.NetDelta),
+	}, nil
 }
 
 func toAdjustment(row sqlc.PayoutAdjustment) payout.Adjustment {
