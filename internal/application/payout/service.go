@@ -20,14 +20,17 @@ type Service struct {
 	couriers    courier.Repository
 	tx          payout.Transactor
 	calc        *payout.Calculator
+	cache       *Cache
 }
 
+// NewService builds the payout service. cache may be nil, then nothing is cached.
 func NewService(
 	payouts payout.Repository,
 	adjustments payout.AdjustmentRepository,
 	couriers courier.Repository,
 	tx payout.Transactor,
 	calc *payout.Calculator,
+	cache *Cache,
 ) *Service {
 	return &Service{
 		payouts:     payouts,
@@ -35,6 +38,7 @@ func NewService(
 		couriers:    couriers,
 		tx:          tx,
 		calc:        calc,
+		cache:       cache,
 	}
 }
 
@@ -91,6 +95,7 @@ func (s *Service) Calculate(ctx context.Context, courierID uuid.UUID, period tim
 		return payout.Payout{}, errs.Wrap(err, "payout service: calculate")
 	}
 
+	s.cache.invalidate(ctx, result.ID, result.CourierID)
 	return result, nil
 }
 
@@ -147,7 +152,12 @@ func (s *Service) Reconcile(ctx context.Context, r payout.Repos, o order.Order, 
 		NetDelta:        netDelta,
 		Reason:          &reason,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	s.cache.invalidate(ctx, p.ID, p.CourierID)
+	return nil
 }
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (payout.Payout, error) {
@@ -155,6 +165,10 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (payout.Payout, err
 }
 
 func (s *Service) GetWithAdjustments(ctx context.Context, id uuid.UUID) (PayoutWithAdjustments, error) {
+	if v, ok := s.cache.getPayout(ctx, id); ok {
+		return v, nil
+	}
+
 	p, err := s.payouts.GetByID(ctx, id)
 	if err != nil {
 		return PayoutWithAdjustments{}, errs.Wrap(err, "payout service: get")
@@ -165,7 +179,9 @@ func (s *Service) GetWithAdjustments(ctx context.Context, id uuid.UUID) (PayoutW
 		return PayoutWithAdjustments{}, errs.Wrap(err, "payout service: get adjustments")
 	}
 
-	return PayoutWithAdjustments{Payout: p, Adjustments: adjs}, nil
+	v := PayoutWithAdjustments{Payout: p, Adjustments: adjs}
+	s.cache.setPayout(ctx, v)
+	return v, nil
 }
 
 func (s *Service) GetByCourierPeriod(ctx context.Context, courierID uuid.UUID, period time.Time) (payout.Payout, error) {
@@ -173,11 +189,30 @@ func (s *Service) GetByCourierPeriod(ctx context.Context, courierID uuid.UUID, p
 }
 
 func (s *Service) UpdateStatus(ctx context.Context, id uuid.UUID, status payout.Status) (payout.Payout, error) {
-	return s.payouts.UpdateStatus(ctx, id, status)
+	p, err := s.payouts.UpdateStatus(ctx, id, status)
+	if err != nil {
+		return payout.Payout{}, errs.Wrap(err, "payout service: update status")
+	}
+	s.cache.invalidate(ctx, p.ID, p.CourierID)
+	return p, nil
 }
 
 func (s *Service) List(ctx context.Context, in payout.ListParams) ([]payout.Payout, int64, error) {
-	return s.payouts.List(ctx, in)
+	if in.CourierID == nil {
+		return s.payouts.List(ctx, in)
+	}
+
+	if items, total, ok := s.cache.getList(ctx, *in.CourierID, in); ok {
+		return items, total, nil
+	}
+
+	items, total, err := s.payouts.List(ctx, in)
+	if err != nil {
+		return nil, 0, errs.Wrap(err, "payout service: list")
+	}
+
+	s.cache.setList(ctx, *in.CourierID, in, items, total)
+	return items, total, nil
 }
 
 func (s *Service) ListAdjustments(ctx context.Context, in payout.AdjustmentListParams) ([]payout.Adjustment, int64, error) {
