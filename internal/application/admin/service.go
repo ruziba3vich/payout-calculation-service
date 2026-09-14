@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/admin"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 )
 
 type Service struct {
@@ -38,7 +39,7 @@ type ListInput struct {
 func (s *Service) Create(ctx context.Context, in CreateInput) (admin.Admin, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return admin.Admin{}, err
+		return admin.Admin{}, errs.Wrap(err, "admin service: hash password")
 	}
 
 	return s.repo.Create(ctx, admin.Admin{
@@ -62,7 +63,7 @@ func (s *Service) Update(ctx context.Context, in UpdateInput) (admin.Admin, erro
 	if in.Password != "" {
 		b, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 		if err != nil {
-			return admin.Admin{}, err
+			return admin.Admin{}, errs.Wrap(err, "admin service: hash password")
 		}
 		hash = string(b)
 	}

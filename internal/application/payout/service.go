@@ -9,6 +9,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/order"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/payout"
 )
@@ -82,12 +83,12 @@ func (s *Service) Calculate(ctx context.Context, courierID uuid.UUID, period tim
 	if errors.Is(err, payout.ErrAlreadyExists) {
 		existing, getErr := s.payouts.GetByCourierPeriod(ctx, courierID, period)
 		if getErr != nil {
-			return payout.Payout{}, getErr
+			return payout.Payout{}, errs.Wrap(getErr, "payout service: calculate")
 		}
 		return existing, payout.ErrAlreadyExists
 	}
 	if err != nil {
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout service: calculate")
 	}
 
 	return result, nil
@@ -156,12 +157,12 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (payout.Payout, err
 func (s *Service) GetWithAdjustments(ctx context.Context, id uuid.UUID) (PayoutWithAdjustments, error) {
 	p, err := s.payouts.GetByID(ctx, id)
 	if err != nil {
-		return PayoutWithAdjustments{}, err
+		return PayoutWithAdjustments{}, errs.Wrap(err, "payout service: get")
 	}
 
 	adjs, err := s.adjustments.ListByPayoutID(ctx, id)
 	if err != nil {
-		return PayoutWithAdjustments{}, err
+		return PayoutWithAdjustments{}, errs.Wrap(err, "payout service: get adjustments")
 	}
 
 	return PayoutWithAdjustments{Payout: p, Adjustments: adjs}, nil

@@ -10,6 +10,7 @@ import (
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/admin"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/auth"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 )
 
 type TokenIssuer interface {
@@ -66,7 +67,7 @@ func (s *Service) LoginCourier(ctx context.Context, phone, password string) (Tok
 func (s *Service) issue(id uuid.UUID, role auth.Role) (Token, error) {
 	token, expiresAt, err := s.tokens.Issue(id, role)
 	if err != nil {
-		return Token{}, err
+		return Token{}, errs.Wrap(err, "auth service: issue token")
 	}
 
 	return Token{

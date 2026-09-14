@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/order"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/payout"
 )
@@ -40,7 +41,7 @@ type CreateInput struct {
 
 func (s *Service) Create(ctx context.Context, in CreateInput) (order.Order, error) {
 	if _, err := s.couriers.GetByID(ctx, in.CourierID); err != nil {
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order service: create")
 	}
 
 	return s.repo.Create(ctx, order.Order{
@@ -75,7 +76,7 @@ func (s *Service) UpdateStatus(ctx context.Context, id uuid.UUID, status order.S
 		return s.reconciler.Reconcile(ctx, r, o, adjustmentTypeFor(status))
 	})
 	if err != nil {
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order service: update status")
 	}
 
 	return updated, nil

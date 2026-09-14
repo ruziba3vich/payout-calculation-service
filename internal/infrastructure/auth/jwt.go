@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,7 +8,10 @@ import (
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/config"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/auth"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 )
+
+var ErrInvalidToken = errs.Unauthorizedf("invalid or expired token")
 
 type Claims struct {
 	jwt.RegisteredClaims
@@ -46,7 +48,7 @@ func (m *Manager) Issue(subject uuid.UUID, role auth.Role) (string, time.Time, e
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(m.secret)
 	if err != nil {
-		return "", time.Time{}, err
+		return "", time.Time{}, errs.Wrap(err, "jwt: sign")
 	}
 	return token, expiresAt, nil
 }
@@ -56,26 +58,23 @@ func (m *Manager) Parse(token string) (uuid.UUID, auth.Role, error) {
 
 	parsed, err := jwt.ParseWithClaims(token, &claims, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+			return nil, ErrInvalidToken
 		}
 		return m.secret, nil
 	}, jwt.WithIssuer(m.issuer))
-	if err != nil {
-		return uuid.Nil, "", err
-	}
-	if !parsed.Valid {
-		return uuid.Nil, "", errors.New("invalid token")
+	if err != nil || !parsed.Valid {
+		return uuid.Nil, "", ErrInvalidToken
 	}
 
 	id, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, "", ErrInvalidToken
 	}
 
 	switch claims.Role {
 	case auth.RoleAdmin, auth.RoleCourier:
 	default:
-		return uuid.Nil, "", errors.New("unknown role")
+		return uuid.Nil, "", ErrInvalidToken
 	}
 
 	return id, claims.Role, nil

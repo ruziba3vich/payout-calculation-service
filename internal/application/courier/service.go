@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 )
 
 type Service struct {
@@ -42,7 +43,7 @@ type ListInput struct {
 func (s *Service) Create(ctx context.Context, in CreateInput) (courier.Courier, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return courier.Courier{}, err
+		return courier.Courier{}, errs.Wrap(err, "courier service: hash password")
 	}
 
 	return s.repo.Create(ctx, courier.Courier{
@@ -68,7 +69,7 @@ func (s *Service) Update(ctx context.Context, in UpdateInput) (courier.Courier, 
 	if in.Password != nil {
 		b, err := bcrypt.GenerateFromPassword([]byte(*in.Password), bcrypt.DefaultCost)
 		if err != nil {
-			return courier.Courier{}, err
+			return courier.Courier{}, errs.Wrap(err, "courier service: hash password")
 		}
 		h := string(b)
 		hash = &h
