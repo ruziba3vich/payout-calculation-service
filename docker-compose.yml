@@ -49,6 +49,8 @@ services:
       DB_URL: postgres://payout:payout@postgres:5432/payout?sslmode=disable
       REDIS_ADDR: redis:6379
       JWT_SECRET: ${JWT_SECRET:-#hello-world-test-jwt-secret-1899}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     depends_on:
       postgres:
         condition: service_healthy

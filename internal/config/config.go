@@ -15,6 +15,13 @@ type Config struct {
 	Postgres PostgresConfig
 	Redis    RedisConfig
 	JWT      JWTConfig
+	Admin    AdminConfig
+}
+
+// AdminConfig seeds a first admin on startup when both fields are set.
+type AdminConfig struct {
+	Username string
+	Password string
 }
 
 type AppConfig struct {
@@ -93,6 +100,10 @@ func Load() (Config, error) {
 			AccessTTL:  getDuration("JWT_ACCESS_TTL", 15*time.Minute, &errs),
 			RefreshTTL: getDuration("JWT_REFRESH_TTL", 7*24*time.Hour, &errs),
 			Issuer:     getString("JWT_ISSUER", "payout-calculation-service"),
+		},
+		Admin: AdminConfig{
+			Username: getString("ADMIN_USERNAME", ""),
+			Password: getString("ADMIN_PASSWORD", ""),
 		},
 	}
 

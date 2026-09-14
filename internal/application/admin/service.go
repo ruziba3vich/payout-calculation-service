@@ -85,3 +85,17 @@ func (s *Service) List(ctx context.Context, in ListInput) ([]admin.Admin, int64,
 		Offset: in.Offset,
 	})
 }
+
+// EnsureExists creates the admin if no admin with that username exists yet.
+func (s *Service) EnsureExists(ctx context.Context, username, password string) error {
+	if _, err := s.repo.GetByUsername(ctx, username); err == nil {
+		return nil
+	}
+
+	_, err := s.Create(ctx, CreateInput{
+		FullName: username,
+		Username: username,
+		Password: password,
+	})
+	return err
+}
