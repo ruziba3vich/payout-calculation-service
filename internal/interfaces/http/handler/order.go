@@ -45,6 +45,19 @@ type listOrdersQuery struct {
 	SortDir       string `form:"sort_dir" binding:"omitempty,oneof=asc desc"`
 }
 
+// Create godoc
+// @Summary  Create order
+// @Tags     orders
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    body body createOrderRequest true "order"
+// @Success  201 {object} OrderResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse "courier not found"
+// @Router   /orders [post]
 func (h *OrderHandler) Create(c *gin.Context) {
 	var req createOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,6 +77,17 @@ func (h *OrderHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, toOrderResponse(o))
 }
 
+// Get godoc
+// @Summary  Get order
+// @Tags     orders
+// @Produce  json
+// @Security BearerAuth
+// @Param    id path string true "order id"
+// @Success  200 {object} OrderResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse
+// @Router   /orders/{id} [get]
 func (h *OrderHandler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -85,6 +109,21 @@ func (h *OrderHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, toOrderResponse(o))
 }
 
+// UpdateStatus godoc
+// @Summary  Change order status
+// @Description Sets delivered_at when status becomes delivered. If the order's month already has a payout, an adjustment is written in the same transaction.
+// @Tags     orders
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    id   path string true "order id"
+// @Param    body body updateOrderStatusRequest true "new status"
+// @Success  200 {object} OrderResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse
+// @Router   /orders/{id}/status [patch]
 func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -119,6 +158,15 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, toOrderResponse(o))
 }
 
+// Delete godoc
+// @Summary  Delete order
+// @Tags     orders
+// @Security BearerAuth
+// @Param    id path string true "order id"
+// @Success  204
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /orders/{id} [delete]
 func (h *OrderHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -134,6 +182,28 @@ func (h *OrderHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// List godoc
+// @Summary  List orders
+// @Description Couriers always get only their own orders, the courier_id filter is ignored for them.
+// @Tags     orders
+// @Produce  json
+// @Security BearerAuth
+// @Param    courier_id     query string false "courier id"
+// @Param    status         query string false "pending | delivered | cancelled | returned"
+// @Param    delivered_from query string false "RFC3339"
+// @Param    delivered_to   query string false "RFC3339"
+// @Param    created_from   query string false "RFC3339"
+// @Param    created_to     query string false "RFC3339"
+// @Param    amount_min     query string false "decimal"
+// @Param    amount_max     query string false "decimal"
+// @Param    sort_by        query string false "amount | delivered_at | created_at"
+// @Param    sort_dir       query string false "asc | desc"
+// @Param    limit          query int    false "page size, max 100" default(20)
+// @Param    offset         query int    false "offset" default(0)
+// @Success  200 {object} OrderListResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Router   /orders [get]
 func (h *OrderHandler) List(c *gin.Context) {
 	var q listOrdersQuery
 	if err := c.ShouldBindQuery(&q); err != nil {

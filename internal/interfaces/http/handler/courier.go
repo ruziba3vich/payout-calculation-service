@@ -34,6 +34,19 @@ type updateCourierRequest struct {
 	IsActive *bool   `json:"is_active"`
 }
 
+// Create godoc
+// @Summary  Create courier
+// @Tags     couriers
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    body body createCourierRequest true "courier"
+// @Success  201 {object} CourierResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  409 {object} ErrorResponse
+// @Router   /couriers [post]
 func (h *CourierHandler) Create(c *gin.Context) {
 	var req createCourierRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,6 +74,17 @@ func (h *CourierHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, toCourierResponse(courier))
 }
 
+// Get godoc
+// @Summary  Get courier
+// @Tags     couriers
+// @Produce  json
+// @Security BearerAuth
+// @Param    id path string true "courier id"
+// @Success  200 {object} CourierResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse
+// @Router   /couriers/{id} [get]
 func (h *CourierHandler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -77,6 +101,17 @@ func (h *CourierHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, toCourierResponse(courier))
 }
 
+// List godoc
+// @Summary  List couriers
+// @Tags     couriers
+// @Produce  json
+// @Security BearerAuth
+// @Param    limit  query int false "page size, max 100" default(20)
+// @Param    offset query int false "offset" default(0)
+// @Success  200 {object} CourierListResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /couriers [get]
 func (h *CourierHandler) List(c *gin.Context) {
 	limit, offset := httpx.Pagination(c)
 
@@ -92,6 +127,21 @@ func (h *CourierHandler) List(c *gin.Context) {
 	httpx.List(c, toCourierResponses(items), total)
 }
 
+// Update godoc
+// @Summary  Update courier
+// @Tags     couriers
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    id   path string true "courier id"
+// @Param    body body updateCourierRequest true "fields to change"
+// @Success  200 {object} CourierResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse
+// @Failure  409 {object} ErrorResponse
+// @Router   /couriers/{id} [patch]
 func (h *CourierHandler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -131,6 +181,15 @@ func (h *CourierHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, toCourierResponse(courier))
 }
 
+// Delete godoc
+// @Summary  Delete courier (soft)
+// @Tags     couriers
+// @Security BearerAuth
+// @Param    id path string true "courier id"
+// @Success  204
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /couriers/{id} [delete]
 func (h *CourierHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

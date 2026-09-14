@@ -153,3 +153,29 @@ type PayoutWithAdjustmentsResponse struct {
 	// TotalAmount is net_amount plus all adjustment net deltas.
 	TotalAmount decimal.Decimal `json:"total_amount"`
 }
+
+// Types below exist for swagger only.
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type CourierListResponse struct {
+	Items []CourierResponse `json:"items"`
+	Total int64             `json:"total"`
+}
+
+type OrderListResponse struct {
+	Items []OrderResponse `json:"items"`
+	Total int64           `json:"total"`
+}
+
+type PayoutListResponse struct {
+	Items []PayoutResponse `json:"items"`
+	Total int64            `json:"total"`
+}
+
+type PayoutConflictResponse struct {
+	Error  string         `json:"error"`
+	Payout PayoutResponse `json:"payout"`
+}

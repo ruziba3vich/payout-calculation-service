@@ -11,6 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "github.com/ruziba3vich/payout-calculation-service/docs"
+
 	adminapp "github.com/ruziba3vich/payout-calculation-service/internal/application/admin"
 	authapp "github.com/ruziba3vich/payout-calculation-service/internal/application/auth"
 	courierapp "github.com/ruziba3vich/payout-calculation-service/internal/application/courier"
@@ -28,6 +30,14 @@ import (
 	"github.com/ruziba3vich/payout-calculation-service/internal/interfaces/http/middleware"
 )
 
+// @title           Payout Calculation Service
+// @version         1.0
+// @description     Monthly payout calculation for couriers with tiered commission.
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     Type "Bearer " followed by the token from /auth/admin/login or /auth/courier/login.
 func main() {
 	cfg, err := config.Load()
 	if err != nil {

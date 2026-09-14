@@ -38,6 +38,16 @@ type tokenResponse struct {
 	SubjectID   uuid.UUID `json:"subject_id"`
 }
 
+// AdminLogin godoc
+// @Summary  Admin login
+// @Tags     auth
+// @Accept   json
+// @Produce  json
+// @Param    body body adminLoginRequest true "credentials"
+// @Success  200 {object} tokenResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Router   /auth/admin/login [post]
 func (h *AuthHandler) AdminLogin(c *gin.Context) {
 	var req adminLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,6 +64,16 @@ func (h *AuthHandler) AdminLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, toTokenResponse(t))
 }
 
+// CourierLogin godoc
+// @Summary  Courier login
+// @Tags     auth
+// @Accept   json
+// @Produce  json
+// @Param    body body courierLoginRequest true "credentials"
+// @Success  200 {object} tokenResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Router   /auth/courier/login [post]
 func (h *AuthHandler) CourierLogin(c *gin.Context) {
 	var req courierLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

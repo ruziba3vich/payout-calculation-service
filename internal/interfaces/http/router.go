@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Handlers struct {
@@ -39,6 +41,7 @@ func NewRouter(h Handlers, m Middleware) *gin.Engine {
 	r.Use(gin.Logger(), gin.Recovery())
 
 	r.GET("/health", h.Health)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	auth := r.Group("/auth")
 	{

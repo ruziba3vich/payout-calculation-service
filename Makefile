@@ -11,6 +11,7 @@ DOCKER_COMPOSE    ?= docker compose
 MIGRATE           ?= migrate
 MIGRATIONS_PATH   ?= ./migrations
 SQLC              ?= sqlc
+SWAG              ?= $(shell go env GOPATH)/bin/swag
 SQLC_CONFIG       ?= ./internal/infrastructure/persistence/postgres/sqlc.yaml
 
 GREEN  := \033[0;32m
@@ -37,6 +38,10 @@ tidy:
 sqlc:
 	@echo "$(YELLOW)→ generating $(SQLC_CONFIG)$(NC)"
 	@$(SQLC) generate -f $(SQLC_CONFIG)
+
+swag:
+	@echo "$(YELLOW)→ generating swagger$(NC)"
+	@$(SWAG) init -g cmd/api/main.go -o docs --parseDependency --parseInternal -q
 
 sqlc-vet:
 	@echo "$(YELLOW)→ compiling $(SQLC_CONFIG)$(NC)"

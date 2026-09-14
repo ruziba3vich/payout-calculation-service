@@ -1,0 +1,1032 @@
+basePath: /
+definitions:
+  github_com_ruziba3vich_payout-calculation-service_internal_application_payout.JobResult:
+    properties:
+      created:
+        type: integer
+      existing:
+        type: integer
+      failed:
+        type: integer
+      period:
+        type: string
+      reason:
+        type: string
+      skipped:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  github_com_ruziba3vich_payout-calculation-service_internal_domain_auth.Role:
+    enum:
+    - admin
+    - courier
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleCourier
+  github_com_ruziba3vich_payout-calculation-service_internal_domain_order.Status:
+    enum:
+    - pending
+    - delivered
+    - cancelled
+    - returned
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusDelivered
+    - StatusCancelled
+    - StatusReturned
+  github_com_ruziba3vich_payout-calculation-service_internal_domain_payout.AdjustmentType:
+    enum:
+    - order_returned
+    - order_cancelled
+    - order_added
+    - manual
+    type: string
+    x-enum-varnames:
+    - AdjustmentOrderReturned
+    - AdjustmentOrderCancelled
+    - AdjustmentOrderAdded
+    - AdjustmentManual
+  github_com_ruziba3vich_payout-calculation-service_internal_domain_payout.Status:
+    enum:
+    - calculated
+    - paid
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - StatusCalculated
+    - StatusPaid
+    - StatusCancelled
+  internal_interfaces_http_handler.AdjustmentResponse:
+    properties:
+      commission_delta:
+        type: number
+      created_at:
+        type: string
+      gross_delta:
+        type: number
+      id:
+        type: string
+      net_delta:
+        type: number
+      order_id:
+        type: string
+      payout_id:
+        type: string
+      reason:
+        type: string
+      type:
+        $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_payout.AdjustmentType'
+    type: object
+  internal_interfaces_http_handler.CourierListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_interfaces_http_handler.CourierResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_interfaces_http_handler.CourierResponse:
+    properties:
+      created_at:
+        type: string
+      full_name:
+        type: string
+      hired_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      phone:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  internal_interfaces_http_handler.OrderListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_interfaces_http_handler.OrderResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_interfaces_http_handler.OrderResponse:
+    properties:
+      amount:
+        type: number
+      courier_id:
+        type: string
+      created_at:
+        type: string
+      delivered_at:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_order.Status'
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handler.PayoutConflictResponse:
+    properties:
+      error:
+        type: string
+      payout:
+        $ref: '#/definitions/internal_interfaces_http_handler.PayoutResponse'
+    type: object
+  internal_interfaces_http_handler.PayoutListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_interfaces_http_handler.PayoutResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_interfaces_http_handler.PayoutResponse:
+    properties:
+      calculated_at:
+        type: string
+      commission_amount:
+        type: number
+      commission_rate:
+        type: number
+      courier_id:
+        type: string
+      created_at:
+        type: string
+      delivered_count:
+        type: integer
+      gross_amount:
+        type: number
+      id:
+        type: string
+      net_amount:
+        type: number
+      paid_at:
+        type: string
+      period:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_payout.Status'
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handler.PayoutWithAdjustmentsResponse:
+    properties:
+      adjustments:
+        items:
+          $ref: '#/definitions/internal_interfaces_http_handler.AdjustmentResponse'
+        type: array
+      calculated_at:
+        type: string
+      commission_amount:
+        type: number
+      commission_rate:
+        type: number
+      courier_id:
+        type: string
+      created_at:
+        type: string
+      delivered_count:
+        type: integer
+      gross_amount:
+        type: number
+      id:
+        type: string
+      net_amount:
+        type: number
+      paid_at:
+        type: string
+      period:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_payout.Status'
+      total_amount:
+        description: TotalAmount is net_amount plus all adjustment net deltas.
+        type: number
+      updated_at:
+        type: string
+    type: object
+  internal_interfaces_http_handler.adminLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  internal_interfaces_http_handler.calculatePayoutRequest:
+    properties:
+      courier_id:
+        type: string
+      period:
+        type: string
+    required:
+    - courier_id
+    - period
+    type: object
+  internal_interfaces_http_handler.courierLoginRequest:
+    properties:
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - password
+    - phone
+    type: object
+  internal_interfaces_http_handler.createCourierRequest:
+    properties:
+      full_name:
+        type: string
+      hired_at:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        type: string
+    required:
+    - full_name
+    - hired_at
+    - password
+    - phone
+    type: object
+  internal_interfaces_http_handler.createOrderRequest:
+    properties:
+      amount:
+        type: number
+      courier_id:
+        type: string
+    required:
+    - amount
+    - courier_id
+    type: object
+  internal_interfaces_http_handler.runJobRequest:
+    properties:
+      period:
+        description: optional YYYY-MM, default previous month
+        type: string
+    type: object
+  internal_interfaces_http_handler.tokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      role:
+        $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_auth.Role'
+      subject_id:
+        type: string
+      token_type:
+        type: string
+    type: object
+  internal_interfaces_http_handler.updateCourierRequest:
+    properties:
+      full_name:
+        type: string
+      hired_at:
+        type: string
+      is_active:
+        type: boolean
+      password:
+        minLength: 6
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_interfaces_http_handler.updateOrderStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_domain_order.Status'
+        enum:
+        - pending
+        - delivered
+        - cancelled
+        - returned
+    required:
+    - status
+    type: object
+info:
+  contact: {}
+  description: Monthly payout calculation for couriers with tiered commission.
+  title: Payout Calculation Service
+  version: "1.0"
+paths:
+  /auth/admin/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.adminLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.tokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      summary: Admin login
+      tags:
+      - auth
+  /auth/courier/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.courierLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.tokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      summary: Courier login
+      tags:
+      - auth
+  /couriers:
+    get:
+      parameters:
+      - default: 20
+        description: page size, max 100
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.CourierListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List couriers
+      tags:
+      - couriers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: courier
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.createCourierRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.CourierResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create courier
+      tags:
+      - couriers
+  /couriers/{id}:
+    delete:
+      parameters:
+      - description: courier id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete courier (soft)
+      tags:
+      - couriers
+    get:
+      parameters:
+      - description: courier id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.CourierResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get courier
+      tags:
+      - couriers
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: courier id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: fields to change
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.updateCourierRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.CourierResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update courier
+      tags:
+      - couriers
+  /couriers/{id}/payouts:
+    get:
+      parameters:
+      - description: courier id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: calculated | paid | cancelled
+        in: query
+        name: status
+        type: string
+      - description: YYYY-MM
+        in: query
+        name: period_from
+        type: string
+      - description: YYYY-MM
+        in: query
+        name: period_to
+        type: string
+      - description: period | net_amount | created_at
+        in: query
+        name: sort_by
+        type: string
+      - description: asc | desc
+        in: query
+        name: sort_dir
+        type: string
+      - default: 20
+        description: page size, max 100
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.PayoutListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Courier payout history
+      tags:
+      - couriers
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+  /orders:
+    get:
+      description: Couriers always get only their own orders, the courier_id filter
+        is ignored for them.
+      parameters:
+      - description: courier id
+        in: query
+        name: courier_id
+        type: string
+      - description: pending | delivered | cancelled | returned
+        in: query
+        name: status
+        type: string
+      - description: RFC3339
+        in: query
+        name: delivered_from
+        type: string
+      - description: RFC3339
+        in: query
+        name: delivered_to
+        type: string
+      - description: RFC3339
+        in: query
+        name: created_from
+        type: string
+      - description: RFC3339
+        in: query
+        name: created_to
+        type: string
+      - description: decimal
+        in: query
+        name: amount_min
+        type: string
+      - description: decimal
+        in: query
+        name: amount_max
+        type: string
+      - description: amount | delivered_at | created_at
+        in: query
+        name: sort_by
+        type: string
+      - description: asc | desc
+        in: query
+        name: sort_dir
+        type: string
+      - default: 20
+        description: page size, max 100
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.OrderListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: order
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.createOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: courier not found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create order
+      tags:
+      - orders
+  /orders/{id}:
+    delete:
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete order
+      tags:
+      - orders
+    get:
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.OrderResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get order
+      tags:
+      - orders
+  /orders/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Sets delivered_at when status becomes delivered. If the order's
+        month already has a payout, an adjustment is written in the same transaction.
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: new status
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.updateOrderStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change order status
+      tags:
+      - orders
+  /payouts:
+    get:
+      parameters:
+      - description: courier id
+        in: query
+        name: courier_id
+        type: string
+      - description: calculated | paid | cancelled
+        in: query
+        name: status
+        type: string
+      - description: YYYY-MM
+        in: query
+        name: period_from
+        type: string
+      - description: YYYY-MM
+        in: query
+        name: period_to
+        type: string
+      - description: period | net_amount | created_at
+        in: query
+        name: sort_by
+        type: string
+      - description: asc | desc
+        in: query
+        name: sort_dir
+        type: string
+      - default: 20
+        description: page size, max 100
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.PayoutListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all payouts
+      tags:
+      - payouts
+  /payouts/{id}:
+    get:
+      parameters:
+      - description: payout id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.PayoutWithAdjustmentsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get payout with adjustments
+      tags:
+      - payouts
+  /payouts/calculate:
+    post:
+      consumes:
+      - application/json
+      description: Idempotent. A second call for the same courier and month returns
+        409 with the existing payout.
+      parameters:
+      - description: courier id and period YYYY-MM
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.calculatePayoutRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.PayoutResponse'
+        "400":
+          description: bad or future period
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "404":
+          description: courier not found
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "409":
+          description: already calculated
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.PayoutConflictResponse'
+      security:
+      - BearerAuth: []
+      summary: Calculate payout for courier + month
+      tags:
+      - payouts
+  /payouts/jobs/monthly:
+    post:
+      consumes:
+      - application/json
+      description: Calculates payouts for all active couriers for one month. Default
+        is the previous month. Same advisory lock as the cron run, a second parallel
+        call returns skipped=true.
+      parameters:
+      - description: optional period
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/internal_interfaces_http_handler.runJobRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ruziba3vich_payout-calculation-service_internal_application_payout.JobResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_interfaces_http_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Run monthly payout job
+      tags:
+      - payouts
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer " followed by the token from /auth/admin/login or /auth/courier/login.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

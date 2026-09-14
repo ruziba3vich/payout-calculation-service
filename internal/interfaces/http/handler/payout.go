@@ -27,6 +27,19 @@ type runJobRequest struct {
 }
 
 // RunJob triggers the monthly job by hand. Same lock as the cron run.
+// RunJob godoc
+// @Summary  Run monthly payout job
+// @Description Calculates payouts for all active couriers for one month. Default is the previous month. Same advisory lock as the cron run, a second parallel call returns skipped=true.
+// @Tags     payouts
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    body body runJobRequest false "optional period"
+// @Success  200 {object} payoutapp.JobResult
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /payouts/jobs/monthly [post]
 func (h *PayoutHandler) RunJob(c *gin.Context) {
 	var req runJobRequest
 	if c.Request.ContentLength > 0 {
@@ -65,6 +78,21 @@ type calculatePayoutRequest struct {
 
 // Calculate creates the payout for courier + month. A second call for the same
 // pair returns 409 with the existing payout in the body.
+// Calculate godoc
+// @Summary  Calculate payout for courier + month
+// @Description Idempotent. A second call for the same courier and month returns 409 with the existing payout.
+// @Tags     payouts
+// @Accept   json
+// @Produce  json
+// @Security BearerAuth
+// @Param    body body calculatePayoutRequest true "courier id and period YYYY-MM"
+// @Success  201 {object} PayoutResponse
+// @Failure  400 {object} ErrorResponse "bad or future period"
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse "courier not found"
+// @Failure  409 {object} PayoutConflictResponse "already calculated"
+// @Router   /payouts/calculate [post]
 func (h *PayoutHandler) Calculate(c *gin.Context) {
 	var req calculatePayoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -103,6 +131,17 @@ type listPayoutsQuery struct {
 	SortDir    string `form:"sort_dir" binding:"omitempty,oneof=asc desc"`
 }
 
+// Get godoc
+// @Summary  Get payout with adjustments
+// @Tags     payouts
+// @Produce  json
+// @Security BearerAuth
+// @Param    id path string true "payout id"
+// @Success  200 {object} PayoutWithAdjustmentsResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Failure  404 {object} ErrorResponse
+// @Router   /payouts/{id} [get]
 func (h *PayoutHandler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -128,6 +167,24 @@ func (h *PayoutHandler) Get(c *gin.Context) {
 	})
 }
 
+// List godoc
+// @Summary  List all payouts
+// @Tags     payouts
+// @Produce  json
+// @Security BearerAuth
+// @Param    courier_id  query string false "courier id"
+// @Param    status      query string false "calculated | paid | cancelled"
+// @Param    period_from query string false "YYYY-MM"
+// @Param    period_to   query string false "YYYY-MM"
+// @Param    sort_by     query string false "period | net_amount | created_at"
+// @Param    sort_dir    query string false "asc | desc"
+// @Param    limit       query int    false "page size, max 100" default(20)
+// @Param    offset      query int    false "offset" default(0)
+// @Success  200 {object} PayoutListResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /payouts [get]
 func (h *PayoutHandler) List(c *gin.Context) {
 	params, ok := h.listParams(c)
 	if !ok {
@@ -143,6 +200,24 @@ func (h *PayoutHandler) List(c *gin.Context) {
 	httpx.List(c, toPayoutResponses(items), total)
 }
 
+// ListByCourier godoc
+// @Summary  Courier payout history
+// @Tags     couriers
+// @Produce  json
+// @Security BearerAuth
+// @Param    id          path  string true  "courier id"
+// @Param    status      query string false "calculated | paid | cancelled"
+// @Param    period_from query string false "YYYY-MM"
+// @Param    period_to   query string false "YYYY-MM"
+// @Param    sort_by     query string false "period | net_amount | created_at"
+// @Param    sort_dir    query string false "asc | desc"
+// @Param    limit       query int    false "page size, max 100" default(20)
+// @Param    offset      query int    false "offset" default(0)
+// @Success  200 {object} PayoutListResponse
+// @Failure  400 {object} ErrorResponse
+// @Failure  401 {object} ErrorResponse
+// @Failure  403 {object} ErrorResponse
+// @Router   /couriers/{id}/payouts [get]
 func (h *PayoutHandler) ListByCourier(c *gin.Context) {
 	courierID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
