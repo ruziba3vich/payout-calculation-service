@@ -1,10 +1,11 @@
 -- name: CreateAdmin :one
 INSERT INTO administration (
+    id,
     full_name,
     username,
     password
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 ) RETURNING *;
 
 -- name: GetAdminByID :one
