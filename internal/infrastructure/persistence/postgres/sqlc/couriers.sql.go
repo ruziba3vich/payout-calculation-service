@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countCouriers = `-- name: CountCouriers :one
@@ -205,12 +204,12 @@ RETURNING id, full_name, phone, password, hired_at, is_active, created_at, updat
 `
 
 type UpdateCourierParams struct {
-	FullName *string     `json:"full_name"`
-	Phone    *string     `json:"phone"`
-	Password *string     `json:"password"`
-	HiredAt  pgtype.Date `json:"hired_at"`
-	IsActive *bool       `json:"is_active"`
-	ID       uuid.UUID   `json:"id"`
+	FullName *string    `json:"full_name"`
+	Phone    *string    `json:"phone"`
+	Password *string    `json:"password"`
+	HiredAt  *time.Time `json:"hired_at"`
+	IsActive *bool      `json:"is_active"`
+	ID       uuid.UUID  `json:"id"`
 }
 
 func (q *Queries) UpdateCourier(ctx context.Context, arg UpdateCourierParams) (Courier, error) {

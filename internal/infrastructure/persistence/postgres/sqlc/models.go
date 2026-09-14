@@ -195,7 +195,7 @@ type Payout struct {
 type PayoutAdjustment struct {
 	ID              uuid.UUID      `json:"id"`
 	PayoutID        uuid.UUID      `json:"payout_id"`
-	OrderID         uuid.UUID      `json:"order_id"`
+	OrderID         *uuid.UUID     `json:"order_id"`
 	Type            AdjustmentType `json:"type"`
 	GrossDelta      pgtype.Numeric `json:"gross_delta"`
 	CommissionDelta pgtype.Numeric `json:"commission_delta"`

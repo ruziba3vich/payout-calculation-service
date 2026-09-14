@@ -23,10 +23,10 @@ WHERE ($1::uuid IS NULL OR courier_id = $1::uuid)
 `
 
 type CountPayoutsParams struct {
-	CourierID  uuid.UUID     `json:"courier_id"`
+	CourierID  *uuid.UUID    `json:"courier_id"`
 	Status     *PayoutStatus `json:"status"`
-	PeriodFrom pgtype.Date   `json:"period_from"`
-	PeriodTo   pgtype.Date   `json:"period_to"`
+	PeriodFrom *time.Time    `json:"period_from"`
+	PeriodTo   *time.Time    `json:"period_to"`
 }
 
 func (q *Queries) CountPayouts(ctx context.Context, arg CountPayoutsParams) (int64, error) {
@@ -176,10 +176,10 @@ OFFSET $7::int
 `
 
 type ListPayoutsParams struct {
-	CourierID  uuid.UUID     `json:"courier_id"`
+	CourierID  *uuid.UUID    `json:"courier_id"`
 	Status     *PayoutStatus `json:"status"`
-	PeriodFrom pgtype.Date   `json:"period_from"`
-	PeriodTo   pgtype.Date   `json:"period_to"`
+	PeriodFrom *time.Time    `json:"period_from"`
+	PeriodTo   *time.Time    `json:"period_to"`
 	SortBy     string        `json:"sort_by"`
 	SortDir    string        `json:"sort_dir"`
 	Offset     int32         `json:"offset"`

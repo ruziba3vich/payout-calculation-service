@@ -27,7 +27,7 @@ WHERE ($1::uuid IS NULL OR courier_id = $1::uuid)
 `
 
 type CountOrdersParams struct {
-	CourierID     uuid.UUID      `json:"courier_id"`
+	CourierID     *uuid.UUID     `json:"courier_id"`
 	Status        *OrderStatus   `json:"status"`
 	DeliveredFrom *time.Time     `json:"delivered_from"`
 	DeliveredTo   *time.Time     `json:"delivered_to"`
@@ -138,7 +138,7 @@ OFFSET $11::int
 `
 
 type ListOrdersParams struct {
-	CourierID     uuid.UUID      `json:"courier_id"`
+	CourierID     *uuid.UUID     `json:"courier_id"`
 	Status        *OrderStatus   `json:"status"`
 	DeliveredFrom *time.Time     `json:"delivered_from"`
 	DeliveredTo   *time.Time     `json:"delivered_to"`

@@ -24,8 +24,8 @@ WHERE ($1::uuid IS NULL OR payout_id = $1::uuid)
 `
 
 type CountPayoutAdjustmentsParams struct {
-	PayoutID    uuid.UUID       `json:"payout_id"`
-	OrderID     uuid.UUID       `json:"order_id"`
+	PayoutID    *uuid.UUID      `json:"payout_id"`
+	OrderID     *uuid.UUID      `json:"order_id"`
 	Type        *AdjustmentType `json:"type"`
 	CreatedFrom *time.Time      `json:"created_from"`
 	CreatedTo   *time.Time      `json:"created_to"`
@@ -62,7 +62,7 @@ INSERT INTO payout_adjustments (
 type CreatePayoutAdjustmentParams struct {
 	ID              uuid.UUID      `json:"id"`
 	PayoutID        uuid.UUID      `json:"payout_id"`
-	OrderID         uuid.UUID      `json:"order_id"`
+	OrderID         *uuid.UUID     `json:"order_id"`
 	Type            AdjustmentType `json:"type"`
 	GrossDelta      pgtype.Numeric `json:"gross_delta"`
 	CommissionDelta pgtype.Numeric `json:"commission_delta"`
@@ -135,8 +135,8 @@ OFFSET $8::int
 `
 
 type ListPayoutAdjustmentsParams struct {
-	PayoutID    uuid.UUID       `json:"payout_id"`
-	OrderID     uuid.UUID       `json:"order_id"`
+	PayoutID    *uuid.UUID      `json:"payout_id"`
+	OrderID     *uuid.UUID      `json:"order_id"`
 	Type        *AdjustmentType `json:"type"`
 	CreatedFrom *time.Time      `json:"created_from"`
 	CreatedTo   *time.Time      `json:"created_to"`

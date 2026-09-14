@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
@@ -49,17 +48,12 @@ func (r *CourierRepo) GetByPhone(ctx context.Context, phone string) (courier.Cou
 }
 
 func (r *CourierRepo) Update(ctx context.Context, p courier.UpdateParams) (courier.Courier, error) {
-	var hiredAt pgtype.Date
-	if p.HiredAt != nil {
-		hiredAt = pgtype.Date{Time: *p.HiredAt, Valid: true}
-	}
-
 	row, err := r.q.UpdateCourier(ctx, sqlc.UpdateCourierParams{
 		ID:       p.ID,
 		FullName: p.FullName,
 		Phone:    p.Phone,
 		Password: p.PasswordHash,
-		HiredAt:  hiredAt,
+		HiredAt:  p.HiredAt,
 		IsActive: p.IsActive,
 	})
 	if err != nil {
