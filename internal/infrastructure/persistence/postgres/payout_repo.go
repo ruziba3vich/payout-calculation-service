@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/payout"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
 )
@@ -37,7 +38,7 @@ func (r *PayoutRepo) Create(ctx context.Context, p payout.Payout) (payout.Payout
 		if isUniqueViolation(err) {
 			return payout.Payout{}, payout.ErrAlreadyExists
 		}
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout repo: create")
 	}
 	return toPayout(row), nil
 }
@@ -48,7 +49,7 @@ func (r *PayoutRepo) GetByID(ctx context.Context, id uuid.UUID) (payout.Payout, 
 		if isNotFound(err) {
 			return payout.Payout{}, payout.ErrNotFound
 		}
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout repo: getByID")
 	}
 	return toPayout(row), nil
 }
@@ -62,7 +63,7 @@ func (r *PayoutRepo) GetByCourierPeriod(ctx context.Context, courierID uuid.UUID
 		if isNotFound(err) {
 			return payout.Payout{}, payout.ErrNotFound
 		}
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout repo: getByCourierPeriod")
 	}
 	return toPayout(row), nil
 }
@@ -76,7 +77,7 @@ func (r *PayoutRepo) GetByCourierPeriodForUpdate(ctx context.Context, courierID 
 		if isNotFound(err) {
 			return payout.Payout{}, payout.ErrNotFound
 		}
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout repo: getByCourierPeriodForUpdate")
 	}
 	return toPayout(row), nil
 }
@@ -90,7 +91,7 @@ func (r *PayoutRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status payo
 		if isNotFound(err) {
 			return payout.Payout{}, payout.ErrNotFound
 		}
-		return payout.Payout{}, err
+		return payout.Payout{}, errs.Wrap(err, "payout repo: updateStatus")
 	}
 	return toPayout(row), nil
 }
@@ -113,7 +114,7 @@ func (r *PayoutRepo) List(ctx context.Context, p payout.ListParams) ([]payout.Pa
 		Offset:     p.Offset,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "payout repo: list")
 	}
 
 	total, err := r.q.CountPayouts(ctx, sqlc.CountPayoutsParams{
@@ -123,7 +124,7 @@ func (r *PayoutRepo) List(ctx context.Context, p payout.ListParams) ([]payout.Pa
 		PeriodTo:   p.PeriodTo,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "payout repo: list")
 	}
 
 	result := make([]payout.Payout, 0, len(rows))

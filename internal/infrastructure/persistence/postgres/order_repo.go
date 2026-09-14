@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/order"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
 )
@@ -30,7 +31,7 @@ func (r *OrderRepo) Create(ctx context.Context, o order.Order) (order.Order, err
 		Amount:    fromDecimal(o.Amount),
 	})
 	if err != nil {
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order repo: create")
 	}
 	return toOrder(row), nil
 }
@@ -41,7 +42,7 @@ func (r *OrderRepo) GetByID(ctx context.Context, id uuid.UUID) (order.Order, err
 		if isNotFound(err) {
 			return order.Order{}, order.ErrNotFound
 		}
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order repo: getByID")
 	}
 	return toOrder(row), nil
 }
@@ -52,7 +53,7 @@ func (r *OrderRepo) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (order.O
 		if isNotFound(err) {
 			return order.Order{}, order.ErrNotFound
 		}
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order repo: getByIDForUpdate")
 	}
 	return toOrder(row), nil
 }
@@ -66,13 +67,13 @@ func (r *OrderRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status order
 		if isNotFound(err) {
 			return order.Order{}, order.ErrNotFound
 		}
-		return order.Order{}, err
+		return order.Order{}, errs.Wrap(err, "order repo: updateStatus")
 	}
 	return toOrder(row), nil
 }
 
 func (r *OrderRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.q.DeleteOrder(ctx, id)
+	return errs.Wrap(r.q.DeleteOrder(ctx, id), "order repo: delete")
 }
 
 func (r *OrderRepo) List(ctx context.Context, p order.ListParams) ([]order.Order, int64, error) {
@@ -97,7 +98,7 @@ func (r *OrderRepo) List(ctx context.Context, p order.ListParams) ([]order.Order
 		Offset:        p.Offset,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "order repo: list")
 	}
 
 	total, err := r.q.CountOrders(ctx, sqlc.CountOrdersParams{
@@ -111,7 +112,7 @@ func (r *OrderRepo) List(ctx context.Context, p order.ListParams) ([]order.Order
 		AmountMax:     fromDecimalPtr(p.AmountMax),
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "order repo: list")
 	}
 
 	result := make([]order.Order, 0, len(rows))
@@ -128,7 +129,7 @@ func (r *OrderRepo) DeliveredStats(ctx context.Context, courierID uuid.UUID, sta
 		PeriodEnd:   end,
 	})
 	if err != nil {
-		return 0, decimal.Zero, err
+		return 0, decimal.Zero, errs.Wrap(err, "order repo: deliveredStats")
 	}
 	return row.DeliveredCount, toDecimal(row.DeliveredTotal), nil
 }

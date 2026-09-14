@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/courier"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
 )
 
@@ -33,7 +34,7 @@ func (r *CourierRepo) Create(ctx context.Context, c courier.Courier) (courier.Co
 		if isUniqueViolation(err) {
 			return courier.Courier{}, courier.ErrPhoneTaken
 		}
-		return courier.Courier{}, err
+		return courier.Courier{}, errs.Wrap(err, "courier repo: create")
 	}
 	return toCourier(row), nil
 }
@@ -44,7 +45,7 @@ func (r *CourierRepo) GetByID(ctx context.Context, id uuid.UUID) (courier.Courie
 		if isNotFound(err) {
 			return courier.Courier{}, courier.ErrNotFound
 		}
-		return courier.Courier{}, err
+		return courier.Courier{}, errs.Wrap(err, "courier repo: getByID")
 	}
 	return toCourier(row), nil
 }
@@ -55,7 +56,7 @@ func (r *CourierRepo) GetByPhone(ctx context.Context, phone string) (courier.Cou
 		if isNotFound(err) {
 			return courier.Courier{}, courier.ErrNotFound
 		}
-		return courier.Courier{}, err
+		return courier.Courier{}, errs.Wrap(err, "courier repo: getByPhone")
 	}
 	return toCourier(row), nil
 }
@@ -76,13 +77,13 @@ func (r *CourierRepo) Update(ctx context.Context, p courier.UpdateParams) (couri
 		case isUniqueViolation(err):
 			return courier.Courier{}, courier.ErrPhoneTaken
 		}
-		return courier.Courier{}, err
+		return courier.Courier{}, errs.Wrap(err, "courier repo: update")
 	}
 	return toCourier(row), nil
 }
 
 func (r *CourierRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
-	return r.q.SoftDeleteCourier(ctx, id)
+	return errs.Wrap(r.q.SoftDeleteCourier(ctx, id), "courier repo: softDelete")
 }
 
 func (r *CourierRepo) List(ctx context.Context, p courier.ListParams) ([]courier.Courier, int64, error) {
@@ -91,12 +92,12 @@ func (r *CourierRepo) List(ctx context.Context, p courier.ListParams) ([]courier
 		Offset: p.Offset,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "courier repo: list")
 	}
 
 	total, err := r.q.CountCouriers(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "courier repo: list")
 	}
 
 	result := make([]courier.Courier, 0, len(rows))
@@ -107,11 +108,13 @@ func (r *CourierRepo) List(ctx context.Context, p courier.ListParams) ([]courier
 }
 
 func (r *CourierRepo) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
-	return r.q.CourierExists(ctx, id)
+	ok, err := r.q.CourierExists(ctx, id)
+	return ok, errs.Wrap(err, "courier repo: exists")
 }
 
 func (r *CourierRepo) ListActiveIDs(ctx context.Context) ([]uuid.UUID, error) {
-	return r.q.ListActiveCourierIDs(ctx)
+	ids, err := r.q.ListActiveCourierIDs(ctx)
+	return ids, errs.Wrap(err, "courier repo: listActiveIDs")
 }
 
 func toCourier(row sqlc.Courier) courier.Courier {

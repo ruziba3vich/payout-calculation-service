@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/admin"
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
 )
 
@@ -25,7 +26,10 @@ func (r *AdminRepo) Create(ctx context.Context, a admin.Admin) (admin.Admin, err
 		Password: a.PasswordHash,
 	})
 	if err != nil {
-		return admin.Admin{}, err
+		if isUniqueViolation(err) {
+			return admin.Admin{}, admin.ErrUsernameTaken
+		}
+		return admin.Admin{}, errs.Wrap(err, "admin repo: create")
 	}
 	return toAdmin(row), nil
 }
@@ -33,7 +37,10 @@ func (r *AdminRepo) Create(ctx context.Context, a admin.Admin) (admin.Admin, err
 func (r *AdminRepo) GetByID(ctx context.Context, id uuid.UUID) (admin.Admin, error) {
 	row, err := r.q.GetAdminByID(ctx, id)
 	if err != nil {
-		return admin.Admin{}, err
+		if isNotFound(err) {
+			return admin.Admin{}, admin.ErrNotFound
+		}
+		return admin.Admin{}, errs.Wrap(err, "admin repo: getByID")
 	}
 	return toAdmin(row), nil
 }
@@ -41,7 +48,10 @@ func (r *AdminRepo) GetByID(ctx context.Context, id uuid.UUID) (admin.Admin, err
 func (r *AdminRepo) GetByUsername(ctx context.Context, username string) (admin.Admin, error) {
 	row, err := r.q.GetAdminByUsername(ctx, username)
 	if err != nil {
-		return admin.Admin{}, err
+		if isNotFound(err) {
+			return admin.Admin{}, admin.ErrNotFound
+		}
+		return admin.Admin{}, errs.Wrap(err, "admin repo: getByUsername")
 	}
 	return toAdmin(row), nil
 }
@@ -54,13 +64,19 @@ func (r *AdminRepo) Update(ctx context.Context, p admin.UpdateParams) (admin.Adm
 		Password: p.PasswordHash,
 	})
 	if err != nil {
-		return admin.Admin{}, err
+		switch {
+		case isNotFound(err):
+			return admin.Admin{}, admin.ErrNotFound
+		case isUniqueViolation(err):
+			return admin.Admin{}, admin.ErrUsernameTaken
+		}
+		return admin.Admin{}, errs.Wrap(err, "admin repo: update")
 	}
 	return toAdmin(row), nil
 }
 
 func (r *AdminRepo) SoftDelete(ctx context.Context, id uuid.UUID) error {
-	return r.q.SoftDeleteAdmin(ctx, id)
+	return errs.Wrap(r.q.SoftDeleteAdmin(ctx, id), "admin repo: softDelete")
 }
 
 func (r *AdminRepo) List(ctx context.Context, p admin.ListParams) ([]admin.Admin, int64, error) {
@@ -69,12 +85,12 @@ func (r *AdminRepo) List(ctx context.Context, p admin.ListParams) ([]admin.Admin
 		Offset: p.Offset,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "admin repo: list")
 	}
 
 	total, err := r.q.CountAdmins(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "admin repo: list")
 	}
 
 	result := make([]admin.Admin, 0, len(rows))

@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/ruziba3vich/payout-calculation-service/internal/domain/errs"
 	"github.com/ruziba3vich/payout-calculation-service/internal/domain/payout"
 	"github.com/ruziba3vich/payout-calculation-service/internal/infrastructure/persistence/postgres/sqlc"
 )
@@ -33,7 +34,7 @@ func (r *PayoutAdjustmentRepo) Create(ctx context.Context, a payout.Adjustment) 
 		Reason:          a.Reason,
 	})
 	if err != nil {
-		return payout.Adjustment{}, err
+		return payout.Adjustment{}, errs.Wrap(err, "adjustment repo: create")
 	}
 	return toAdjustment(row), nil
 }
@@ -44,7 +45,7 @@ func (r *PayoutAdjustmentRepo) GetByID(ctx context.Context, id uuid.UUID) (payou
 		if isNotFound(err) {
 			return payout.Adjustment{}, payout.ErrNotFound
 		}
-		return payout.Adjustment{}, err
+		return payout.Adjustment{}, errs.Wrap(err, "adjustment repo: getByID")
 	}
 	return toAdjustment(row), nil
 }
@@ -52,7 +53,7 @@ func (r *PayoutAdjustmentRepo) GetByID(ctx context.Context, id uuid.UUID) (payou
 func (r *PayoutAdjustmentRepo) ListByPayoutID(ctx context.Context, payoutID uuid.UUID) ([]payout.Adjustment, error) {
 	rows, err := r.q.ListPayoutAdjustmentsByPayoutID(ctx, payoutID)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "adjustment repo: listByPayoutID")
 	}
 
 	result := make([]payout.Adjustment, 0, len(rows))
@@ -81,7 +82,7 @@ func (r *PayoutAdjustmentRepo) List(ctx context.Context, p payout.AdjustmentList
 		Offset:      p.Offset,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "adjustment repo: list")
 	}
 
 	total, err := r.q.CountPayoutAdjustments(ctx, sqlc.CountPayoutAdjustmentsParams{
@@ -92,7 +93,7 @@ func (r *PayoutAdjustmentRepo) List(ctx context.Context, p payout.AdjustmentList
 		CreatedTo:   p.CreatedTo,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errs.Wrap(err, "adjustment repo: list")
 	}
 
 	result := make([]payout.Adjustment, 0, len(rows))
@@ -105,7 +106,7 @@ func (r *PayoutAdjustmentRepo) List(ctx context.Context, p payout.AdjustmentList
 func (r *PayoutAdjustmentRepo) SumByPayoutID(ctx context.Context, payoutID uuid.UUID) (payout.AdjustmentSum, error) {
 	row, err := r.q.SumPayoutAdjustments(ctx, payoutID)
 	if err != nil {
-		return payout.AdjustmentSum{}, err
+		return payout.AdjustmentSum{}, errs.Wrap(err, "adjustment repo: sumByPayoutID")
 	}
 	return payout.AdjustmentSum{
 		GrossDelta:      toDecimal(row.GrossDelta),
